@@ -44,6 +44,27 @@ func updateDLQMessageStatus() {
 	}
 
 	for _, message := range messages {
+
+		// Acquire the lock with a distinct DLQ identifier before starting the transaction
+		lockName := zkclient.LockName + "DLQ" + strconv.Itoa(int(message.ID))
+		lock := zkclient.NewDistributedLock(config.ZkConn, zkclient.LockBasePath, lockName)
+		acquired, err := lock.Acquire()
+		if err != nil {
+			log.Printf("Error acquiring DLQ lock for message ID %d: %v", message.ID, err)
+			continue
+		}
+		if !acquired {
+			// DLQ Lock not acquired, skip this message
+			continue
+		}
+
+		// Ensure the lock is released after the transaction is done
+		defer func() {
+			if err := lock.Release(); err != nil {
+				log.Printf("Error releasing DLQ lock for message ID %d: %v", message.ID, err)
+			}
+		}()
+
 		// Start a transaction
 		tx := messageQueueRepository.DB.Begin()
 		if tx.Error != nil {
