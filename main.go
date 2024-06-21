@@ -2,10 +2,9 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
-	"os"
 	"schedulerV2/config"
+	"schedulerV2/models"
 	"schedulerV2/routers"
 	"schedulerV2/services"
 	"strings"
@@ -15,21 +14,20 @@ import (
 )
 
 func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Unable to read env file")
+
+	// Load environment variables from .env file
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
 	}
+
+	// Load the configuration for the specified environment
+	if err := config.LoadConfig(); err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
 	config.InitDB()
 
-	zkHosts := os.Getenv("ZOOKEEPER_HOSTS")
-	zkServers := strings.Split(zkHosts, ",")
-
-	if len(zkServers) == 0 {
-		log.Fatal("ZOOKEEPER_HOSTS environment variable not set, need atleast one cluster")
-	}
-	fmt.Println(zkServers, "Hey")
-
-	config.InitZooKeeper(zkServers) // list of zookeeper servers
+	config.InitZooKeeper(strings.Split(models.AppConfig.ZookeeperHosts, ",")) // list of zookeeper servers
 
 	services.InitServices()
 }

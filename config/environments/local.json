@@ -1,0 +1,4 @@
+{
+  "zookeeper_hosts": "localhost:2181",
+  "database_dsn": "host=localhost user=kunalchandel password=kunal dbname=scheduler port=5432 TimeZone=Asia/Kolkata"
+}

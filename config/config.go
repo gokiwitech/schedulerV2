@@ -1,6 +1,8 @@
 package config
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"schedulerV2/models"
@@ -17,14 +19,35 @@ var (
 	ZkConn *zk.Conn
 )
 
+func LoadConfig() error {
+
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		env = "local" // Default to local environment
+	}
+
+	configFile := fmt.Sprintf("./config/environments/%s.json", env)
+	configData, err := os.ReadFile(configFile)
+	if err != nil {
+		return fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	err = json.Unmarshal(configData, &models.AppConfig)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal config data: %w", err)
+	}
+
+	// Validate ZooKeeper hosts
+	if len(models.AppConfig.ZookeeperHosts) == 0 {
+		return fmt.Errorf("ZOOKEEPER_HOSTS configuration is required")
+	}
+
+	return nil
+}
+
 func InitDB() {
 	var err error
-	// jdbc:postgresql://api-service.ctzddw7hprpx.ap-south-1.rds.amazonaws.com:5432/scheduler?ssl=true&sslrootcert=${user.dir}/rds-ca-2019-root.pem
-	dsn := os.Getenv("DATABASE_DSN")
-	if len(dsn) == 0 {
-		log.Fatal("DATABASE_DSN environment variable not set")
-	}
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+	DB, err = gorm.Open(postgres.Open(models.AppConfig.DatabaseDSN), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
