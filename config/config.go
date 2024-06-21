@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	DB     *gorm.DB
-	ZkConn *zk.Conn
+	DB           *gorm.DB
+	ZkConn       *zk.Conn
+	eventChannel <-chan zk.Event
 )
 
 func LoadConfig() error {
@@ -64,8 +65,32 @@ func InitDB() {
 
 func InitZooKeeper(servers []string) {
 	var err error
-	ZkConn, _, err = zk.Connect(servers, time.Duration(10)*time.Second)
+	ZkConn, eventChannel, err = zk.Connect(servers, time.Duration(10)*time.Second)
 	if err != nil {
 		log.Fatalf("Unable to connect to ZooKeeper: %v", err)
 	}
+
+	// Set up a watcher on the ZooKeeper connection.
+	go func(ec <-chan zk.Event) {
+		for event := range ec {
+			switch event.State {
+			case zk.StateDisconnected:
+				log.Println("ZooKeeper disconnected. Attempting to reconnect...")
+				ZkConn, _, err = zk.Connect(servers, time.Duration(10)*time.Second) // Reassign to the global ZkConn
+				if err != nil {
+					log.Printf("Failed to reconnect to ZooKeeper: %v", err)
+				} else {
+					log.Println("Reconnected to ZooKeeper successfully.")
+				}
+			case zk.StateExpired:
+				log.Println("ZooKeeper session expired. Re-establishing connection...")
+				ZkConn, _, err = zk.Connect(servers, time.Duration(10)*time.Second) // Reassign to the global ZkConn
+				if err != nil {
+					log.Printf("Failed to re-establish ZooKeeper connection: %v", err)
+				} else {
+					log.Println("ZooKeeper connection re-established successfully.")
+				}
+			}
+		}
+	}(eventChannel)
 }
