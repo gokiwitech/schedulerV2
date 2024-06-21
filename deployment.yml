@@ -1,0 +1,21 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: schedulerv2
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      name: schedulerv2
+  template:
+    metadata:
+      labels:
+        name: schedulerv2
+    spec:
+      containers:
+        - name: schedulerv2
+          image: schedulerv2:v1.0
+          # imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9999
