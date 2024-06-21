@@ -2,6 +2,7 @@ package zkclient
 
 import (
 	"path"
+	"sync"
 
 	"github.com/samuel/go-zookeeper/zk"
 )
@@ -12,9 +13,14 @@ type DistributedLock struct {
 	LockName     string
 	LockPath     string
 	Acl          []zk.ACL
+	mu           sync.Mutex
 }
 
 func (dl *DistributedLock) Acquire() (bool, error) {
+
+	dl.mu.Lock()
+	defer dl.mu.Unlock()
+
 	// Ensure the base path exists
 	_, err := dl.Conn.Create(dl.LockBasePath, []byte{}, 0, dl.Acl)
 	if err != nil && err != zk.ErrNodeExists {
@@ -39,6 +45,9 @@ func (dl *DistributedLock) Acquire() (bool, error) {
 }
 
 func (dl *DistributedLock) Release() error {
+	dl.mu.Lock()
+	defer dl.mu.Unlock()
+
 	if dl.LockPath == "" {
 		// Lock was never acquired or already released
 		return nil
