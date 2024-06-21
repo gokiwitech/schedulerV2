@@ -14,7 +14,6 @@ SchedulerV2 is a robust scheduling service designed to manage and process schedu
 ## Prerequisites
 Before you begin, ensure you have met the following requirements:
 - Go version 1.20 or above is installed.
-- Access to a Linux or Windows machine.
 - Docker is installed if you wish to run the service in a container.
 - Access to a PostgreSQL database.
 - An Apache ZooKeeper cluster is set up if you wish to use distributed coordination features.
