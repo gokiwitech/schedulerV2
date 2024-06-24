@@ -2,6 +2,6 @@
   "zookeeper_hosts": "localhost:2181",
   "database_dsn": "host=localhost user=kunalchandel password=kunal dbname=scheduler port=5432 TimeZone=Asia/Kolkata",
   "messages_limit": 100,
-  "dlq_messages_limit": 20,
+  "dlq_message_limit": 20,
   "zookeeper_heart_beat_time": 10
 }

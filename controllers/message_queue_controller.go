@@ -28,5 +28,5 @@ func EnqueueMessage(c *gin.Context) {
 		utils.ErrorResponse(c, nil, http.StatusInternalServerError, fmt.Sprintf("Failed to push the message:- %s", err.Error()))
 		return
 	}
-	utils.SuccessResponse(c, fmt.Sprintf("Message with id is successfully pushed %d", id), utils.SuccessMessage)
+	utils.SuccessResponse(c, fmt.Sprintf("Message with id %d is successfully pushed", id), utils.SuccessMessage)
 }
