@@ -11,6 +11,7 @@ type MessageRequestBodyDto struct {
 	Status      MessageStatusEnums `json:"status"`
 	NextRetry   time.Time          `json:"nextRetry" binding:"required"`
 	RetryCount  int                `json:"retryCount"`
+	ServiceName string             `json:"serviceName"`
 }
 
 func (m *MessageRequestBodyDto) ToMessageQueue() (MessageQueue, error) {

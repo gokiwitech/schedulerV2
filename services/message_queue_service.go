@@ -75,6 +75,7 @@ func EnqueueMessage(messageQueue models.MessageQueue) (uint, error) {
 		IsDLQ:       messageQueue.IsDLQ,
 		RetryCount:  messageQueue.RetryCount,
 		NextRetry:   messageQueue.NextRetry,
+		ServiceName: messageQueue.ServiceName,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}

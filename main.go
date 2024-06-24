@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"schedulerV2/config"
+	"schedulerV2/middleware"
 	"schedulerV2/models"
 	"schedulerV2/routers"
 	"schedulerV2/services"
@@ -46,6 +47,7 @@ func main() {
 	}
 
 	router := gin.New()
+	router.Use(middleware.InternalApiTokenValidator())
 	schedulerV2 := router.Group("/scheduler/v2")
 	routers.SetupRouter(schedulerV2)
 

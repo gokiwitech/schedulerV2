@@ -24,6 +24,7 @@ type MessageQueue struct {
 	RetryCount  int                `gorm:"index:idx_status_retry_dlq,retry_count;default:0;not null" json:"retry_count"`
 	IsDLQ       bool               `gorm:"index:idx_status_retry_dlq,is_dlq;default:false;not null" json:"is_dlq"`
 	NextRetry   time.Time          `gorm:"index:idx_message_queue_next_retry;not null" json:"next_retry" binding:"required"`
+	ServiceName string             `gorm:"not null" json:"service_name"`
 	CreatedAt   time.Time          `gorm:"default:current_timestamp" json:"created_at"`
 	UpdatedAt   time.Time          `gorm:"default:current_timestamp" json:"updated_at"`
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var (
@@ -54,6 +55,10 @@ func LoadConfig() error {
 		return fmt.Errorf("invalid zookeeper_heart_beat_time value in the config file")
 	}
 
+	if len(models.AppConfig.InternalSecretKey) == 0 {
+		return fmt.Errorf("required secret_key to start the service")
+	}
+
 	return nil
 }
 
@@ -62,6 +67,7 @@ func InitDB() {
 	DB, err = gorm.Open(postgres.Open(models.AppConfig.DatabaseDSN), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
+
 	if err != nil {
 		log.Fatal("Failed to connect to the database:", err)
 	}

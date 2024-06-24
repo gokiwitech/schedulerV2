@@ -7,6 +7,7 @@ type Config struct {
 	MessagesLimit           int    `json:"messages_limit"`
 	DlqMessageLimit         int    `json:"dlq_message_limit"`
 	ZookeepeerHeartBeatTime int    `json:"zookeeper_heart_beat_time"`
+	InternalSecretKey       string `json:"internal_secret_key"`
 }
 
 // AppConfig holds the application's configuration.

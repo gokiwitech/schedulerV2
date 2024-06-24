@@ -3,5 +3,6 @@
   "database_dsn": "host=localhost user=kunalchandel password=kunal dbname=scheduler port=5432 TimeZone=Asia/Kolkata",
   "messages_limit": 100,
   "dlq_message_limit": 20,
-  "zookeeper_heart_beat_time": 10
+  "zookeeper_heart_beat_time": 10,
+  "internal_secret_key": "0inYh1ZsDlyFmjD2lAytkWvjElPXhc/n37qwPkE1u/K/hpYly+8zFFLXcdcBA6WqP4sCGq1yy4/gnMxbYKn0Dw=="
 }
