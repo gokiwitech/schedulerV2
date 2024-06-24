@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"schedulerV2/models"
 	"schedulerV2/services"
+	"schedulerV2/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,20 +13,20 @@ import (
 func EnqueueMessage(c *gin.Context) {
 	var messageRequest models.MessageRequestBodyDto
 	if err := c.ShouldBindJSON(&messageRequest); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, nil, http.StatusBadRequest, fmt.Sprintf("Failed to push the message:- %s", err.Error()))
 		return
 	}
 
 	mq, err := messageRequest.ToMessageQueue()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, nil, http.StatusBadRequest, fmt.Sprintf("Failed to push the message:- %s", err.Error()))
 		return
 	}
 
 	id, err := services.EnqueueMessage(mq)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, nil, http.StatusInternalServerError, fmt.Sprintf("Failed to push the message:- %s", err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"id": id})
+	utils.SuccessResponse(c, fmt.Sprintf("Message with id is successfully pushed %d", id), utils.SuccessMessage)
 }
