@@ -23,12 +23,15 @@ To install SchedulerV2, follow these steps:
 1. Clone the repository to your local machine.
 2. Navigate to the project directory.
 3. Compile the service using the Go compiler with the command `go build`.
-4. Set the necessary environment variables such as `DATABASE_DSN` and `ZOOKEEPER_HOSTS`.
+4. Set the necessary environment variables such as `database_dsn`, `zookeeper_host`, `dlq_message_limit` and `messages_limit`.
 
 ## Configuration
 The service can be configured using environment variables. Key configurations include:
-- `DATABASE_DSN`: The data source name for connecting to the PostgreSQL database.
-- `ZOOKEEPER_HOSTS`: Comma-separated list of ZooKeeper hosts.
+- `database_dsn`: The data source name for connecting to the PostgreSQL database.
+- `zookeeper_hosts`: Comma-separated list of ZooKeeper hosts.
+- `messages_limit`: The no of `PENDING` messages to be processed each second
+- `dlq_message_limit`: This the count after which you want your messages to be moved to the dlq table to avoid unlimited retry.
+- `zookeeper_heart_beat_time`: This is the session time for the zookeeper session.
 
 ## Running the Service
 To run SchedulerV2, execute the compiled binary with the command `./schedulerV2`.

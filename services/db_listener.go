@@ -37,7 +37,7 @@ func StartSchedulers() {
 func updateDLQMessageStatus() {
 	log.Println("Checking for DLQ status for messages whose retry count is 20...")
 
-	messages, err := messageQueueRepository.FindByStatusAndRetryCountAndIsDLQ(string(models.PENDING), 20, false)
+	messages, err := messageQueueRepository.FindByStatusAndRetryCountAndIsDLQ(string(models.PENDING), models.AppConfig.DlqMessageLimit, false)
 	if err != nil {
 		log.Println("Error fetching messages:", err)
 		return
@@ -103,7 +103,7 @@ func scanAndProcessMessages() {
 	log.Println("Scanning for pending messages and processing...")
 
 	nowPlusOneSecond := time.Now().Add(time.Second)
-	messages, err := messageQueueRepository.FindByStatusAndNextRetryAndRetryCountAndIsDLQ(string(models.PENDING), nowPlusOneSecond, 20, false)
+	messages, err := messageQueueRepository.FindByStatusAndNextRetryAndRetryCountAndIsDLQ(string(models.PENDING), nowPlusOneSecond, models.AppConfig.DlqMessageLimit, false)
 	if err != nil {
 		log.Println("Error fetching messages:", err)
 		return
