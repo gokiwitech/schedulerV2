@@ -67,14 +67,14 @@ func handleRetry(message *models.MessageQueue) {
 	message.NextRetry = time.Now().Add(time.Duration(message.RetryCount) * 1000)
 }
 
-func EnqueueMessage(messageRequest models.MessageRequestBodyDto) (uint, error) {
+func EnqueueMessage(messageQueue models.MessageQueue) (uint, error) {
 	message := models.MessageQueue{
-		Payload:     messageRequest.Payload,
-		CallbackUrl: messageRequest.CallbackUrl,
-		Status:      models.PENDING,
-		IsDLQ:       false,
-		RetryCount:  0,
-		NextRetry:   messageRequest.NextRetry,
+		Payload:     messageQueue.Payload,
+		CallbackUrl: messageQueue.CallbackUrl,
+		Status:      messageQueue.Status,
+		IsDLQ:       messageQueue.IsDLQ,
+		RetryCount:  messageQueue.RetryCount,
+		NextRetry:   messageQueue.NextRetry,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}

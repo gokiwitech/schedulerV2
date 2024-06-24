@@ -46,7 +46,8 @@ func main() {
 	}
 
 	router := gin.New()
-	routers.SetupRouter(router)
+	schedulerV2 := router.Group("/scheduler/v2")
+	routers.SetupRouter(schedulerV2)
 
 	// Initialize scheduled tasks
 	go services.StartSchedulers()

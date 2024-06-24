@@ -15,7 +15,13 @@ func EnqueueMessage(c *gin.Context) {
 		return
 	}
 
-	id, err := services.EnqueueMessage(messageRequest)
+	mq, err := messageRequest.ToMessageQueue()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	id, err := services.EnqueueMessage(mq)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

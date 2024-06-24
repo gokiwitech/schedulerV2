@@ -11,9 +11,9 @@ type DlqMessageQueue struct {
 	ID             string       `gorm:"type:varchar(36);primaryKey;" json:"id"`
 	MessageQueueID MessageQueue `gorm:"foreignKey:MessageID;references:ID" json:"message_queue"`
 	MessageID      uint         `gorm:"not null" json:"message_id"`
-	IsProcessed    bool         `json:"is_processed"`
-	CreatedAt      time.Time    `json:"created_at"`
-	UpdatedAt      time.Time    `json:"updated_at"`
+	IsProcessed    bool         `gorm:"not null" json:"is_processed"`
+	CreatedAt      time.Time    `gorm:"default:current_timestamp" json:"created_at"`
+	UpdatedAt      time.Time    `gorm:"default:current_timestamp" json:"updated_at"`
 }
 
 func (dlq *DlqMessageQueue) BeforeCreate(tx *gorm.DB) (err error) {
