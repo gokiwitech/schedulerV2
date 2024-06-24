@@ -26,7 +26,7 @@ func (r *MessageQueueRepository) FindByStatusAndRetryCountAndIsDLQ(status string
 }
 
 func (r *MessageQueueRepository) FindByStatusAndNextRetryAndRetryCountAndIsDLQ(status string, nextRetry time.Time, retryCount int, isDLQ bool) ([]models.MessageQueue, error) {
-	err := r.DB.Table(models.MessageQueue.TableName(models.MessageQueue{})).Limit(100).Where("status = ? AND next_retry < ? AND retry_count < ? AND is_dlq = ?", status, nextRetry, retryCount, isDLQ).Find(&messages).Error
+	err := r.DB.Table(models.MessageQueue.TableName(models.MessageQueue{})).Limit(100).Where("status = ? AND retry_count < ? AND is_dlq = ? AND next_retry < ? ", status, retryCount, isDLQ, nextRetry).Find(&messages).Error
 	if err != nil {
 		return messages, err
 	}
