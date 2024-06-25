@@ -3,7 +3,7 @@ FROM golang:1.19-alpine as builder
 RUN mkdir /build
 WORKDIR /build
 COPY . /build/
-RUN CGO_ENABLED=0 go build -a -o schedulerV2 .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o schedulerV2 .
 
 
 # executable
