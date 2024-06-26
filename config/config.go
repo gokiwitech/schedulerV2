@@ -18,16 +18,17 @@ var (
 	DB           *gorm.DB
 	ZkConn       *zk.Conn
 	eventChannel <-chan zk.Event
+	Env          string
 )
 
 func LoadConfig() error {
 
-	env := os.Getenv("APP_ENV")
-	if env == "" {
-		env = "local" // Default to local environment
+	Env := os.Getenv("APP_ENV")
+	if Env == "" {
+		Env = "local" // Default to local environment
 	}
 
-	configFile := fmt.Sprintf("./config/environments/%s.json", env)
+	configFile := fmt.Sprintf("./config/environments/%s.json", Env)
 	configData, err := os.ReadFile(configFile)
 	if err != nil {
 		return fmt.Errorf("failed to read config file: %w", err)
@@ -71,6 +72,15 @@ func InitDB() {
 	if err != nil {
 		log.Fatal("Failed to connect to the database:", err)
 	}
+
+	if Env == "local" || Env == "staging" {
+		// Enable detailed logging in local and staging environments
+		DB.Logger = logger.Default.LogMode(logger.Info)
+	} else {
+		// Only log errors and warnings in pre-prod and prod environments
+		DB.Logger = logger.Default.LogMode(logger.Warn)
+	}
+
 	// Perform auto-migration to keep the schema updated.
 	err = DB.AutoMigrate(&models.MessageQueue{}, &models.DlqMessageQueue{})
 	if err != nil {
