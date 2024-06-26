@@ -51,7 +51,6 @@ func InternalApiTokenValidator() gin.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			// Token is valid, you can extract claims if necessary and proceed
 			c.Set("claims", claims)
 			c.Next()
 		} else {
