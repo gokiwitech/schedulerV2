@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/robfig/cron"
 )
 
 var messageQueueRepository *repositories.MessageQueueRepository
@@ -25,19 +27,20 @@ func StartSchedulers() {
 		for {
 			select {
 			case <-tickerDLQ.C:
-				updateDLQMessageStatus()
+				go updateScheduledDLQMessageStatus()
 			case <-tickerProcess.C:
-				scanAndProcessMessages()
+				go scanAndProcessScheduledMessages()
+				go scanAndProcessConditionalMessages()
 			}
 		}
 	}()
 
 }
 
-func updateDLQMessageStatus() {
+func updateScheduledDLQMessageStatus() {
 	log.Println("Checking for DLQ status for messages whose retry count is 20...")
 
-	messages, err := messageQueueRepository.FindByStatusAndRetryCountAndIsDLQ(string(models.PENDING), models.AppConfig.DlqMessageLimit, false)
+	messages, err := messageQueueRepository.FindByStatusAndRetryCountAndIsDLQ(string(models.PENDING), string(models.SCHEDULED), false, models.AppConfig.DlqMessageLimit)
 	if err != nil {
 		log.Println("Error fetching messages:", err)
 		return
@@ -99,11 +102,11 @@ func updateDLQMessageStatus() {
 	}
 }
 
-func scanAndProcessMessages() {
+func scanAndProcessScheduledMessages() {
 	log.Println("Scanning for pending messages and processing...")
 
 	nowPlusOneSecond := time.Now().Add(time.Second)
-	messages, err := messageQueueRepository.FindByStatusAndNextRetryAndRetryCountAndIsDLQ(string(models.PENDING), nowPlusOneSecond, models.AppConfig.DlqMessageLimit, false)
+	messages, err := messageQueueRepository.FindByStatusAndNextRetryAndRetryCountAndIsDLQ(string(models.PENDING), string(models.SCHEDULED), false, models.AppConfig.DlqMessageLimit, nowPlusOneSecond)
 	if err != nil {
 		log.Println("Error fetching messages:", err)
 		return
@@ -135,8 +138,68 @@ func scanAndProcessMessages() {
 			}
 
 			// Proceed with processing the message
-			if err := processMessage(&msg); err != nil {
+			if err := processScheduledMessage(&msg); err != nil {
 				log.Printf("Error processing message ID %d: %v", msg.ID, err)
+			}
+		}(message)
+	}
+	wg.Wait()
+}
+
+func scanAndProcessConditionalMessages() {
+	log.Println("Scanning & Processing conditional messages...")
+
+	// Fetch conditional messages
+	nowPlusOneSecond := time.Now().Add(time.Second)
+	conditionalMessages, err := messageQueueRepository.FindByStatusAndNextRetryAndRetryCountAndIsDLQ(string(models.PENDING), string(models.CONDITIONAL), false, models.AppConfig.DlqMessageLimit, nowPlusOneSecond)
+	if err != nil {
+		log.Printf("Error fetching conditional messages: %v", err)
+		return
+	}
+
+	var wg sync.WaitGroup
+	for _, message := range conditionalMessages {
+		wg.Add(1)
+		go func(msg models.MessageQueue) {
+			defer wg.Done()
+
+			// Parse the frequency cron expression
+			schedule, err := cron.ParseStandard(msg.Frequency)
+			if err != nil {
+				log.Printf("Invalid cron expression for message ID %d: %v", msg.ID, err)
+				return
+			}
+
+			// Calculate the next run time from the next retry time
+			nextRun := schedule.Next(msg.NextRetry).UTC()
+			if time.Now().UTC().Before(nextRun) {
+				return
+			}
+
+			// Acquire distributed lock
+			lock := zkclient.NewDistributedLock(config.ZkConn, zkclient.LockBasePath, zkclient.LockName+strconv.Itoa(int(msg.ID)))
+			acquired, err := lock.Acquire()
+			if err != nil {
+				log.Printf("Error acquiring lock for message ID %d: %v", msg.ID, err)
+				return
+			}
+
+			if !acquired {
+				// Lock not acquired, another process is already processing this message
+				return
+			}
+			defer lock.Release()
+
+			// Update the message status to IN_PROGRESS in the database
+			if err := setMessageStatusInProgress(&msg); err != nil {
+				log.Printf("Failed to set IN-PROGRESS status for message ID %d: %v", msg.ID, err)
+				return
+			}
+
+			// Time to process the message
+			log.Printf("Processing message ID %d", msg.ID)
+			if err := processConditionalMessage(&msg); err != nil {
+				log.Printf("Error processing conditional message ID %d: %v", msg.ID, err)
 			}
 		}(message)
 	}

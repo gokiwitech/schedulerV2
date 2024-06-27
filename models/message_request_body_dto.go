@@ -12,6 +12,8 @@ type MessageRequestBodyDto struct {
 	NextRetry   time.Time          `json:"nextRetry" binding:"required"`
 	RetryCount  int                `json:"retryCount"`
 	ServiceName string             `json:"serviceName"`
+	MessageType MessageTypeEnums   `json:"messageType" binding:"required"`
+	Frequency   string             `json:"frequency"`
 }
 
 func (m *MessageRequestBodyDto) ToMessageQueue() (MessageQueue, error) {
@@ -28,7 +30,8 @@ func (m *MessageRequestBodyDto) ToMessageQueue() (MessageQueue, error) {
 		IsDLQ:       false,
 		RetryCount:  m.RetryCount,
 		NextRetry:   m.NextRetry,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		MessageType: m.MessageType,
+		ServiceName: m.ServiceName,
+		Frequency:   m.Frequency,
 	}, nil
 }

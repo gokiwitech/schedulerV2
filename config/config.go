@@ -23,7 +23,7 @@ var (
 
 func LoadConfig() error {
 
-	Env := os.Getenv("APP_ENV")
+	Env = os.Getenv("APP_ENV")
 	if Env == "" {
 		Env = "local" // Default to local environment
 	}
@@ -65,9 +65,7 @@ func LoadConfig() error {
 
 func InitDB() {
 	var err error
-	DB, err = gorm.Open(postgres.Open(models.AppConfig.DatabaseDSN), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+	DB, err = gorm.Open(postgres.Open(models.AppConfig.DatabaseDSN), &gorm.Config{})
 
 	if err != nil {
 		log.Fatal("Failed to connect to the database:", err)

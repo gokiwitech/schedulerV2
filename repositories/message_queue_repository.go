@@ -17,16 +17,16 @@ func NewMessageQueueRepository(db *gorm.DB) *MessageQueueRepository {
 	return &MessageQueueRepository{DB: db}
 }
 
-func (r *MessageQueueRepository) FindByStatusAndRetryCountAndIsDLQ(status string, retryCount int, isDLQ bool) ([]models.MessageQueue, error) {
-	err := r.DB.Table(models.MessageQueue.TableName(models.MessageQueue{})).Where("status = ? AND retry_count = ? AND is_dlq = ?", status, retryCount, isDLQ).Find(&messages).Error
+func (r *MessageQueueRepository) FindByStatusAndRetryCountAndIsDLQ(status string, messageType string, isDLQ bool, retryCount int) ([]models.MessageQueue, error) {
+	err := r.DB.Table(models.MessageQueue.TableName(models.MessageQueue{})).Where("status = ? AND message_type = ? AND is_dlq = ? AND retry_count = ?", status, messageType, isDLQ, retryCount).Find(&messages).Error
 	if err != nil {
 		return messages, err
 	}
 	return messages, nil
 }
 
-func (r *MessageQueueRepository) FindByStatusAndNextRetryAndRetryCountAndIsDLQ(status string, nextRetry time.Time, retryCount int, isDLQ bool) ([]models.MessageQueue, error) {
-	err := r.DB.Table(models.MessageQueue.TableName(models.MessageQueue{})).Limit(models.AppConfig.MessagesLimit).Where("status = ? AND retry_count < ? AND is_dlq = ? AND next_retry < ? ", status, retryCount, isDLQ, nextRetry).Find(&messages).Error
+func (r *MessageQueueRepository) FindByStatusAndNextRetryAndRetryCountAndIsDLQ(status string, messageType string, isDLQ bool, retryCount int, nextRetry time.Time) ([]models.MessageQueue, error) {
+	err := r.DB.Table(models.MessageQueue.TableName(models.MessageQueue{})).Limit(models.AppConfig.MessagesLimit).Where("status = ? AND message_type = ? AND is_dlq = ? AND retry_count < ? AND next_retry <= ?", status, messageType, isDLQ, retryCount, nextRetry).Find(&messages).Error
 	if err != nil {
 		return messages, err
 	}

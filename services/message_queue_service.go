@@ -17,16 +17,33 @@ const (
 	StatusSuccess              = "Success"
 )
 
-func processMessage(message *models.MessageQueue) error {
+func processScheduledMessage(message *models.MessageQueue) error {
 	callbackResponse, err := sendCallback(message)
 	message.Status = models.PENDING
 	if err != nil {
 		log.Println("Error sending callback:", err)
 		handleRetry(message)
-	} else if callbackResponse.Status == "Success" {
+	} else if callbackResponse.Status == StatusSuccess {
 		message.Status = models.COMPLETED
 	} else {
 		handleRetry(message)
+	}
+	return messageQueueRepository.Save(message)
+}
+
+func processConditionalMessage(message *models.MessageQueue) error {
+	callbackResponse, err := sendCallback(message)
+	message.Status = models.PENDING
+	if err != nil {
+		log.Println("Error sending callback:", err)
+		message.RetryCount++
+	} else {
+		if callbackResponse.Status == StatusSuccess {
+			message.RetryCount = 0
+			message.NextRetry = time.Now()
+		} else {
+			message.RetryCount++
+		}
 	}
 	return messageQueueRepository.Save(message)
 }
@@ -76,8 +93,8 @@ func EnqueueMessage(messageQueue models.MessageQueue) (uint, error) {
 		RetryCount:  messageQueue.RetryCount,
 		NextRetry:   messageQueue.NextRetry,
 		ServiceName: messageQueue.ServiceName,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		MessageType: messageQueue.MessageType,
+		Frequency:   messageQueue.Frequency,
 	}
 	if err := messageQueueRepository.Save(&message); err != nil {
 		return 0, err
