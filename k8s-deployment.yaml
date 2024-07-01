@@ -4,7 +4,7 @@ metadata:
   name: scheduler-v2
   namespace: application-ns
 spec:
-  replicas: 10
+  replicas: 2
   selector:
     matchLabels:
       app: scheduler-v2
