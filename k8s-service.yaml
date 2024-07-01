@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduler-v2-svc
+  namespace: application-ns  # Added to ensure the service is in the right namespace
+spec:
+  selector:
+    app: scheduler-v2  # Updated to match the correct label selector of the pods
+  type: NodePort
+  ports:
+    - name: http
+      port: 9999  # Expose the HTTP port
+      targetPort: 9999 # Targets the container port for HTTP
+      nodePort: 30099  # Optionally specify another nodePort if needed
+      protocol: TCP
