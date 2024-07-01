@@ -30,15 +30,23 @@ jobs:
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
       - name: Build Docker image
-        run: docker build . --file Dockerfile --tag ${{ env.GAR_LOCATION }}/scheduler-v2:${{ github.run_number }}
+        run: |
+         echo Building image with tag ${{ env.GAR_LOCATION }}/scheduler-v2:${{ github.run_number }}
+         docker build . --file Dockerfile --tag ${{ env.GAR_LOCATION }}/scheduler-v2:${{ github.run_number }}
 
       - name: Push Docker image
-        run: docker push ${{ env.GAR_LOCATION }}/scheduler-v2:${{ github.run_number }}
+        run: |
+         echo Pushing image ${{ env.GAR_LOCATION }}/scheduler-v2:${{ github.run_number }}
+         docker push ${{ env.GAR_LOCATION }}/scheduler-v2:${{ github.run_number }}
 
       - name: Set up kubectl
         run: |
           gcloud components install kubectl --quiet
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --zone ${{ env.CLUSTER_ZONE }} --project ${{ env.PROJECT_ID }}
+
+      - name: "Prepare Kubernetes deployment file"
+        run: |
+          sed -i 's|IMAGE_TAG_PLACEHOLDER|${{ env.GAR_LOCATION }}/scheduler-v2:${{ github.run_number }}|g' ./k8s-deployment.yaml
 
       - name: "Deploy to Kubernetes"
         run: |
