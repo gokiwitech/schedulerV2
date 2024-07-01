@@ -36,3 +36,7 @@ func (r *MessageQueueRepository) FindByStatusAndNextRetryAndRetryCountAndIsDLQ(s
 func (r *MessageQueueRepository) Save(message *models.MessageQueue) error {
 	return r.DB.Save(message).Error
 }
+
+func (r *MessageQueueRepository) Ping() error {
+	return r.DB.Exec("SELECT 1").Error
+}

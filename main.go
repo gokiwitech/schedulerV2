@@ -47,8 +47,11 @@ func main() {
 	}
 
 	router := gin.New()
-	router.Use(middleware.InternalApiTokenValidator())
+
 	schedulerV2 := router.Group("/scheduler/v2")
+	schedulerV2.GET("/health", routers.HealthCheck)
+
+	schedulerV2.Use(middleware.InternalApiTokenValidator())
 	routers.SetupRouter(schedulerV2)
 
 	// Initialize scheduled tasks
