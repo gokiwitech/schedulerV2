@@ -1,0 +1,48 @@
+name: Build and Push to Artifact Registry
+
+on:
+  push:
+    branches: ["main"]
+
+env:
+  PROJECT_ID: kiwi-staging-415508
+  REGION: asia-south1
+  GAR_LOCATION: asia-south1-docker.pkg.dev/kiwi-staging-415508/cg-scheduler-v2
+  CLUSTER_NAME: staging-k8s
+  CLUSTER_ZONE: asia-south1
+
+jobs:
+  build-push-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Configure Docker to use the gcloud command-line tool as a credential helper
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build Docker image
+        run: docker build . --file Dockerfile --tag ${{ env.GAR_LOCATION }}/scheduler-v2:${{ github.run_number }}
+
+      - name: Push Docker image
+        run: docker push ${{ env.GAR_LOCATION }}/scheduler-v2:${{ github.run_number }}
+
+      - name: Set up kubectl
+        run: |
+          gcloud components install kubectl --quiet
+          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --zone ${{ env.CLUSTER_ZONE }} --project ${{ env.PROJECT_ID }}
+
+      - name: "Deploy to Kubernetes"
+        run: |
+          gcloud container clusters get-credentials ${CLUSTER_NAME} --zone ${CLUSTER_ZONE} --project ${PROJECT_ID}   
+          kubectl replace --force -f k8s-deployment.yaml -n application-ns
+          kubectl apply -f k8s-service.yaml -n application-ns
+          kubectl rollout status deployment/scheduler-v2 --namespace application-ns
