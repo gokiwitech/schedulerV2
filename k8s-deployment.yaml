@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: schedulerv2
+  name: scheduler-v2
   namespace: application-ns
 spec:
   replicas: 10
   selector:
     matchLabels:
-      app: schedulerv2
+      app: scheduler-v2
   template:
     metadata:
       labels:
-        app: schedulerv2
+        app: scheduler-v2
     spec:
       containers:
-      - name: schedulerv2
+      - name: scheduler-v2
         image: IMAGE_TAG_PLACEHOLDER
         imagePullPolicy: Always
         ports:
@@ -28,7 +28,7 @@ spec:
             memory: "3Gi"
         livenessProbe:
           httpGet:
-            path: /health
+            path: /scheduler/v2/health
             port: 9999
           initialDelaySeconds: 60
           periodSeconds: 20
@@ -36,7 +36,7 @@ spec:
           failureThreshold: 5
         readinessProbe:
           httpGet:
-            path: /ready
+            path: /scheduler/v2/health
             port: 9999
           initialDelaySeconds: 60
           periodSeconds: 10
@@ -46,13 +46,13 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: schedulerv2-hpa
+  name: scheduler-v2-hpa
   namespace: application-ns
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: schedulerv2
+    name: scheduler-v2
   minReplicas: 1
   maxReplicas: 20
   metrics:
