@@ -1,6 +1,6 @@
 {
-  "zookeeper_hosts": "localhost:2181",
-  "database_dsn": "host=10.209.112.5 user=gokiwiuser password=NxahPfML6zK1Kn5P dbname=scheduler-v2 port=5432 TimeZone=Asia/Kolkata",
+  "zookeeper_hosts": "zk-cs.datastore-ns.svc.cluster.local:2181",
+  "database_dsn": "host=10.209.112.5 user=postgres password=NxahPfML6zK1Kn5P dbname=scheduler-v2 port=5432 TimeZone=Asia/Kolkata",
   "messages_limit": 100,
   "dlq_message_limit": 20,
   "zookeeper_heart_beat_time": 10,
