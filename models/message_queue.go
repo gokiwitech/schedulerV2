@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/robfig/cron"
 	"gorm.io/gorm"
@@ -32,7 +31,7 @@ type MessageQueue struct {
 	Status      MessageStatusEnums `gorm:"index:idx_status_message_type_is_dlq_retry_count;default:PENDING;not null" json:"status"`
 	RetryCount  int                `gorm:"index:idx_status_message_type_is_dlq_retry_count;default:0;not null" json:"retry_count"`
 	IsDLQ       bool               `gorm:"index:idx_status_message_type_is_dlq_retry_count;default:false;not null" json:"is_dlq"`
-	NextRetry   time.Time          `gorm:"index:idx_next_retry;not null" json:"next_retry" binding:"required"`
+	NextRetry   int64              `gorm:"index:idx_next_retry;not null" json:"next_retry" binding:"required"`
 	ServiceName string             `json:"service_name"`
 	MessageType MessageTypeEnums   `json:"message_type"`
 	Frequency   string             `json:"frequency"`

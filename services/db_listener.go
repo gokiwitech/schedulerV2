@@ -105,7 +105,7 @@ func updateScheduledDLQMessageStatus() {
 func scanAndProcessScheduledMessages() {
 	log.Println("Scanning for pending messages and processing...")
 
-	nowPlusOneSecond := time.Now().Add(time.Second)
+	nowPlusOneSecond := time.Now().Unix() + 1
 	messages, err := messageQueueRepository.FindByStatusAndNextRetryAndRetryCountAndIsDLQ(string(models.PENDING), string(models.SCHEDULED), false, models.AppConfig.DlqMessageLimit, nowPlusOneSecond)
 	if err != nil {
 		log.Println("Error fetching messages:", err)
@@ -150,7 +150,7 @@ func scanAndProcessConditionalMessages() {
 	log.Println("Scanning & Processing conditional messages...")
 
 	// Fetch conditional messages
-	nowPlusOneSecond := time.Now().Add(time.Second)
+	nowPlusOneSecond := time.Now().Unix() + 1
 	conditionalMessages, err := messageQueueRepository.FindByStatusAndNextRetryAndRetryCountAndIsDLQ(string(models.PENDING), string(models.CONDITIONAL), false, models.AppConfig.DlqMessageLimit, nowPlusOneSecond)
 	if err != nil {
 		log.Printf("Error fetching conditional messages: %v", err)
@@ -171,7 +171,8 @@ func scanAndProcessConditionalMessages() {
 			}
 
 			// Calculate the next run time from the next retry time
-			nextRun := schedule.Next(msg.NextRetry).UTC()
+			nextRetryTime := time.Unix(msg.NextRetry, 0).UTC()
+			nextRun := schedule.Next(nextRetryTime)
 			if time.Now().UTC().Before(nextRun) {
 				return
 			}

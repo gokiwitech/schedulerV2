@@ -2,14 +2,13 @@ package models
 
 import (
 	"encoding/json"
-	"time"
 )
 
 type MessageRequestBodyDto struct {
 	Payload     json.RawMessage    `json:"payload" binding:"required"`
 	CallbackUrl string             `json:"callbackUrl" binding:"required,url"`
 	Status      MessageStatusEnums `json:"status"`
-	NextRetry   time.Time          `json:"nextRetry" binding:"required"`
+	NextRetry   int64              `json:"nextRetry" binding:"required"`
 	RetryCount  int                `json:"retryCount"`
 	ServiceName string             `json:"serviceName"`
 	MessageType MessageTypeEnums   `json:"messageType" binding:"required"`
