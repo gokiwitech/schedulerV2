@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"schedulerV2/models"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -25,7 +24,7 @@ func (r *MessageQueueRepository) FindByStatusAndRetryCountAndIsDLQ(status string
 	return messages, nil
 }
 
-func (r *MessageQueueRepository) FindByStatusAndNextRetryAndRetryCountAndIsDLQ(status string, messageType string, isDLQ bool, retryCount int, nextRetry time.Time) ([]models.MessageQueue, error) {
+func (r *MessageQueueRepository) FindByStatusAndNextRetryAndRetryCountAndIsDLQ(status string, messageType string, isDLQ bool, retryCount int, nextRetry int64) ([]models.MessageQueue, error) {
 	err := r.DB.Table(models.MessageQueue.TableName(models.MessageQueue{})).Limit(models.AppConfig.MessagesLimit).Where("status = ? AND message_type = ? AND is_dlq = ? AND retry_count < ? AND next_retry <= ?", status, messageType, isDLQ, retryCount, nextRetry).Find(&messages).Error
 	if err != nil {
 		return messages, err

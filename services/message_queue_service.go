@@ -40,7 +40,7 @@ func processConditionalMessage(message *models.MessageQueue) error {
 	} else {
 		if callbackResponse.Status == StatusSuccess {
 			message.RetryCount = 0
-			message.NextRetry = time.Now()
+			message.NextRetry = time.Now().Unix()
 		} else {
 			message.RetryCount++
 		}
@@ -81,7 +81,7 @@ func sendCallback(message *models.MessageQueue) (*models.CallbackResponseDTO, er
 
 func handleRetry(message *models.MessageQueue) {
 	message.RetryCount++
-	message.NextRetry = time.Now().Add(time.Duration(message.RetryCount) * 1000)
+	message.NextRetry = time.Now().Unix() + int64(message.RetryCount)
 }
 
 func EnqueueMessage(messageQueue models.MessageQueue) (uint, error) {
