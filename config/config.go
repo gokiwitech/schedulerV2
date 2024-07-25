@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"schedulerV2/models"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/samuel/go-zookeeper/zk"
@@ -15,10 +18,12 @@ import (
 )
 
 var (
-	DB           *gorm.DB
+	db           *gorm.DB
 	ZkConn       *zk.Conn
 	eventChannel <-chan zk.Event
 	Env          string
+	mu           sync.Mutex
+	once         sync.Once
 )
 
 func LoadConfig() error {
@@ -63,29 +68,143 @@ func LoadConfig() error {
 	return nil
 }
 
-func InitDB() {
-	var err error
-	DB, err = gorm.Open(postgres.Open(models.AppConfig.DatabaseDSN), &gorm.Config{})
+// GetLatestDBPassword fetches the latest database password token
+func GetLatestDBPassword() string {
+	pgPasswordCmd := exec.Command("aws", "rds", "generate-db-auth-token",
+		"--hostname", models.AppConfig.DatabaseHost,
+		"--port", models.AppConfig.DatabasePort,
+		"--region", models.AppConfig.DatabaseRegion,
+		"--username", models.AppConfig.DatabaseUser)
 
+	pgPasswordOutput, err := pgPasswordCmd.Output()
 	if err != nil {
-		log.Fatal("Failed to connect to the database:", err)
+		log.Printf("Error executing aws command: %v", err)
+		return ""
 	}
 
+	return strings.TrimSpace(string(pgPasswordOutput))
+}
+
+// GetDBConnection returns a database connection using the latest password
+func GetDBConnection() (*gorm.DB, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if db == nil {
+		return initDB()
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return initDB()
+	}
+
+	if err := sqlDB.Ping(); err != nil {
+		return initDB()
+	}
+
+	return db, nil
+}
+
+// initDB initializes the database connection with logging and automigration
+func initDB() (*gorm.DB, error) {
+	password := GetLatestDBPassword()
+	if password == "" {
+		return nil, fmt.Errorf("failed to get database password")
+	}
+
+	dsn := fmt.Sprintf("host=%s user=%s dbname=%s port=%s password=%s",
+		models.AppConfig.DatabaseHost,
+		models.AppConfig.DatabaseUser,
+		models.AppConfig.DatabaseName,
+		models.AppConfig.DatabasePort,
+		password)
+
+	gormConfig := &gorm.Config{
+		PrepareStmt: true,
+		Logger:      logger.Default.LogMode(logger.Silent),
+	}
+
+	// Enable logging if in development mode
 	if Env == "local" || Env == "staging" {
-		// Enable detailed logging in local and staging environments
-		DB.Logger = logger.Default.LogMode(logger.Info)
-	} else {
-		// Only log errors and warnings in pre-prod and prod environments
-		DB.Logger = logger.Default.LogMode(logger.Warn)
+		gormConfig.Logger = logger.Default.LogMode(logger.Info)
 	}
 
-	// Perform auto-migration to keep the schema updated.
-	err = DB.AutoMigrate(&models.MessageQueue{}, &models.DlqMessageQueue{})
+	var err error
+	db, err = gorm.Open(postgres.Open(dsn), gormConfig)
 	if err != nil {
-		log.Fatal("Failed to auto-migrate database schema:", err)
+		return nil, err
 	}
 
-	log.Println("Database connection established and schema migrated.")
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	// Configure connection pool
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(time.Hour)
+
+	// Run automigrations
+	if err := db.AutoMigrate(&models.MessageQueue{}, &models.DlqMessageQueue{}); err != nil {
+		return nil, fmt.Errorf("failed to run automigrations: %v", err)
+	}
+
+	log.Println("Database connection initialized and migrations completed")
+
+	return db, nil
+}
+
+// InitDBWithRefresh initializes the database connection and starts a refresh routine
+func InitDBWithRefresh() error {
+	var initErr error
+	once.Do(func() {
+		_, initErr = initDB()
+		if initErr == nil {
+			go refreshDBConnectionPeriodically()
+		}
+	})
+	return initErr
+}
+
+// refreshDBConnectionPeriodically refreshes the database connection every 5 minutes
+func refreshDBConnectionPeriodically() {
+	ticker := time.NewTicker(10 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		if err := refreshDBConnection(); err != nil {
+			log.Printf("Error refreshing database connection: %v", err)
+		}
+	}
+}
+
+func refreshDBConnection() error {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if db == nil {
+		return nil
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+
+	if err := sqlDB.Close(); err != nil {
+		return err
+	}
+
+	newDB, err := initDB()
+	if err != nil {
+		return err
+	}
+
+	db = newDB
+	log.Println("Database connection refreshed")
+	return nil
 }
 
 func InitZooKeeper(servers []string) {

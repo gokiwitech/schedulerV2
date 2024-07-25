@@ -17,8 +17,15 @@ func SetupRouter(schedulerV2 *gin.RouterGroup) {
 
 // healthCheck defines the health check route handler
 func HealthCheck(c *gin.Context) {
+	// Get a database connection
+	db, err := config.GetDBConnection()
+	if err != nil {
+		utils.ErrorResponse(c, nil, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
 	// Ping the database to check its connectivity
-	err := repositories.NewMessageQueueRepository(config.DB).Ping()
+	err = repositories.NewMessageQueueRepository().Ping(db)
 	if err != nil {
 		utils.ErrorResponse(c, nil, http.StatusInternalServerError, "Unhealthy")
 		return
