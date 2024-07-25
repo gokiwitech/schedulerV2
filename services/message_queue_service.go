@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"schedulerV2/config"
 	"schedulerV2/models"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 var httpClient = &http.Client{}
@@ -18,6 +21,11 @@ const (
 )
 
 func processScheduledMessage(message *models.MessageQueue) error {
+	db, err := config.GetDBConnection()
+	if err != nil {
+		return fmt.Errorf("error getting database connection: %v", err)
+	}
+
 	callbackResponse, err := sendCallback(message)
 	message.Status = models.PENDING
 	if err != nil {
@@ -28,10 +36,15 @@ func processScheduledMessage(message *models.MessageQueue) error {
 	} else {
 		handleRetry(message)
 	}
-	return messageQueueRepository.Save(message)
+	return messageQueueRepository.Save(db, message)
 }
 
 func processConditionalMessage(message *models.MessageQueue) error {
+	db, err := config.GetDBConnection()
+	if err != nil {
+		return fmt.Errorf("error getting database connection: %v", err)
+	}
+
 	callbackResponse, err := sendCallback(message)
 	message.Status = models.PENDING
 	if err != nil {
@@ -45,7 +58,7 @@ func processConditionalMessage(message *models.MessageQueue) error {
 			message.RetryCount++
 		}
 	}
-	return messageQueueRepository.Save(message)
+	return messageQueueRepository.Save(db, message)
 }
 
 func sendCallback(message *models.MessageQueue) (*models.CallbackResponseDTO, error) {
@@ -85,6 +98,11 @@ func handleRetry(message *models.MessageQueue) {
 }
 
 func EnqueueMessage(messageQueue models.MessageQueue) (uint, error) {
+	db, err := config.GetDBConnection()
+	if err != nil {
+		return 0, fmt.Errorf("error getting database connection: %v", err)
+	}
+
 	message := models.MessageQueue{
 		Payload:     messageQueue.Payload,
 		CallbackUrl: messageQueue.CallbackUrl,
@@ -96,16 +114,16 @@ func EnqueueMessage(messageQueue models.MessageQueue) (uint, error) {
 		MessageType: messageQueue.MessageType,
 		Frequency:   messageQueue.Frequency,
 	}
-	if err := messageQueueRepository.Save(&message); err != nil {
+	if err := messageQueueRepository.Save(db, &message); err != nil {
 		return 0, err
 	}
 	log.Printf("Message with id %d pushed to MessageQueue table", message.ID)
 	return message.ID, nil
 }
 
-func setMessageStatusInProgress(message *models.MessageQueue) error {
+func setMessageStatusInProgress(db *gorm.DB, message *models.MessageQueue) error {
 	// Start a new transaction
-	tx := messageQueueRepository.DB.Begin()
+	tx := db.Begin()
 	if tx.Error != nil {
 		return tx.Error
 	}

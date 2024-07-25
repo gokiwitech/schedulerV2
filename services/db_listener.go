@@ -16,7 +16,7 @@ import (
 var messageQueueRepository *repositories.MessageQueueRepository
 
 func InitServices() {
-	messageQueueRepository = repositories.NewMessageQueueRepository(config.DB)
+	messageQueueRepository = repositories.NewMessageQueueRepository()
 }
 
 func StartSchedulers() {
@@ -40,7 +40,12 @@ func StartSchedulers() {
 func updateScheduledDLQMessageStatus() {
 	log.Println("Checking for DLQ status for messages whose retry count is 20...")
 
-	messages, err := messageQueueRepository.FindByStatusAndRetryCountAndIsDLQ(string(models.PENDING), string(models.SCHEDULED), false, models.AppConfig.DlqMessageLimit)
+	db, err := config.GetDBConnection()
+	if err != nil {
+		log.Println("Error getting database connection:", err)
+		return
+	}
+	messages, err := messageQueueRepository.FindByStatusAndRetryCountAndIsDLQ(db, string(models.PENDING), string(models.SCHEDULED), false, models.AppConfig.DlqMessageLimit)
 	if err != nil {
 		log.Println("Error fetching messages:", err)
 		return
@@ -69,7 +74,7 @@ func updateScheduledDLQMessageStatus() {
 		}()
 
 		// Start a transaction
-		tx := messageQueueRepository.DB.Begin()
+		tx := db.Begin()
 		if tx.Error != nil {
 			log.Println("Error starting transaction:", tx.Error)
 			continue
@@ -105,8 +110,13 @@ func updateScheduledDLQMessageStatus() {
 func scanAndProcessScheduledMessages() {
 	log.Println("Scanning for pending messages and processing...")
 
+	db, err := config.GetDBConnection()
+	if err != nil {
+		log.Println("Error getting database connection:", err)
+		return
+	}
 	nowPlusOneSecond := time.Now().Unix() + 1
-	messages, err := messageQueueRepository.FindByStatusAndNextRetryAndRetryCountAndIsDLQ(string(models.PENDING), string(models.SCHEDULED), false, models.AppConfig.DlqMessageLimit, nowPlusOneSecond)
+	messages, err := messageQueueRepository.FindByStatusAndNextRetryAndRetryCountAndIsDLQ(db, string(models.PENDING), string(models.SCHEDULED), false, models.AppConfig.DlqMessageLimit, nowPlusOneSecond)
 	if err != nil {
 		log.Println("Error fetching messages:", err)
 		return
@@ -132,7 +142,7 @@ func scanAndProcessScheduledMessages() {
 			defer lock.Release()
 
 			// Update the message status to IN_PROGRESS in the database
-			if err := setMessageStatusInProgress(&msg); err != nil {
+			if err := setMessageStatusInProgress(db, &msg); err != nil {
 				log.Printf("Failed to set IN-PROGRESS status for message ID %d: %v", msg.ID, err)
 				return
 			}
@@ -149,9 +159,14 @@ func scanAndProcessScheduledMessages() {
 func scanAndProcessConditionalMessages() {
 	log.Println("Scanning & Processing conditional messages...")
 
+	db, err := config.GetDBConnection()
+	if err != nil {
+		log.Println("Error getting database connection:", err)
+		return
+	}
 	// Fetch conditional messages
 	nowPlusOneSecond := time.Now().Unix() + 1
-	conditionalMessages, err := messageQueueRepository.FindByStatusAndNextRetryAndRetryCountAndIsDLQ(string(models.PENDING), string(models.CONDITIONAL), false, models.AppConfig.DlqMessageLimit, nowPlusOneSecond)
+	conditionalMessages, err := messageQueueRepository.FindByStatusAndNextRetryAndRetryCountAndIsDLQ(db, string(models.PENDING), string(models.CONDITIONAL), false, models.AppConfig.DlqMessageLimit, nowPlusOneSecond)
 	if err != nil {
 		log.Printf("Error fetching conditional messages: %v", err)
 		return
@@ -192,7 +207,7 @@ func scanAndProcessConditionalMessages() {
 			defer lock.Release()
 
 			// Update the message status to IN_PROGRESS in the database
-			if err := setMessageStatusInProgress(&msg); err != nil {
+			if err := setMessageStatusInProgress(db, &msg); err != nil {
 				log.Printf("Failed to set IN-PROGRESS status for message ID %d: %v", msg.ID, err)
 				return
 			}

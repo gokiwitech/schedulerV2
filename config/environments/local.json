@@ -1,9 +1,10 @@
 {
   "zookeeper_hosts": "localhost:2181",
   "database_dsn": "host=localhost user=kunalchandel password=kunal dbname=scheduler port=5432 TimeZone=Asia/Kolkata",
-  "database_host": "api-service.cbnrcgnwliyh.ap-south-1.rds.amazonaws.com",
+  "database_host": "localhost",
   "database_port": "5432",
-  "database_user": "gokiwiuser",
+  "database_name": "scheduler",
+  "database_user": "kunalchandel",
   "database_region": "ap-south-1",
   "messages_limit": 100,
   "dlq_message_limit": 20,
