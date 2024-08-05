@@ -2,3 +2,4 @@
 schedulerV2
 config/environments/*.json
 !config/environments/local.json
+*.log
