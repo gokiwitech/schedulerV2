@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"log"
+	"os"
 	"schedulerV2/config"
 	"schedulerV2/middleware"
 	"schedulerV2/models"
@@ -12,23 +12,29 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/rs/zerolog"
 )
+
+var lg zerolog.Logger
 
 func init() {
 
+	// Initialize the logger
+	lg = config.GetLogger(true) // Set to true if you want to include the caller information in logs
+
 	// Load environment variables from .env file
 	if err := godotenv.Load(); err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+		lg.Fatal().Err(err).Msg("Error loading .env file")
 	}
 
 	// Load the configuration for the specified environment
 	if err := config.LoadConfig(); err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		lg.Fatal().Err(err).Msg("Failed to load configuration")
 	}
 
 	// Initialize database with refresh mechanism
 	if err := config.InitDBWithRefresh(); err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		lg.Fatal().Err(err).Msg("Failed to initialize database")
 	}
 
 	config.InitZooKeeper(strings.Split(models.AppConfig.ZookeeperHosts, ",")) // list of zookeeper servers
@@ -52,6 +58,21 @@ func main() {
 
 	router := gin.New()
 
+	// Use zerolog for Gin's logging
+	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		Output: zerolog.ConsoleWriter{Out: os.Stdout},
+		Formatter: func(param gin.LogFormatterParams) string {
+			lg.Info().
+				Str("method", param.Method).
+				Str("path", param.Path).
+				Int("status", param.StatusCode).
+				Str("latency", param.Latency.String()).
+				Str("client_ip", param.ClientIP).
+				Msg("request")
+			return ""
+		},
+	}))
+
 	schedulerV2 := router.Group("/scheduler/v2")
 	schedulerV2.GET("/health", routers.HealthCheck)
 
@@ -61,5 +82,9 @@ func main() {
 	// Initialize scheduled tasks
 	go services.StartSchedulers()
 
-	router.Run(port)
+	lg.Info().Msgf("Starting server on port %s", port)
+
+	if err := router.Run(port); err != nil {
+		lg.Fatal().Err(err).Msg("Failed to start server")
+	}
 }

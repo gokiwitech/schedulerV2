@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"schedulerV2/models"
@@ -25,6 +24,8 @@ var (
 	mu           sync.Mutex
 	once         sync.Once
 )
+
+var lg = GetLogger(true)
 
 func LoadConfig() error {
 
@@ -78,7 +79,7 @@ func GetLatestDBPassword() string {
 
 	pgPasswordOutput, err := pgPasswordCmd.Output()
 	if err != nil {
-		log.Printf("Error executing aws command: %v", err)
+		lg.Error().Msgf("Error executing aws command: %v", err)
 		return ""
 	}
 
@@ -151,7 +152,7 @@ func initDB() (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to run automigrations: %v", err)
 	}
 
-	log.Println("Database connection initialized and migrations completed")
+	lg.Info().Msg("Database connection initialized and migrations completed")
 
 	return db, nil
 }
@@ -175,7 +176,7 @@ func refreshDBConnectionPeriodically() {
 
 	for range ticker.C {
 		if err := refreshDBConnection(); err != nil {
-			log.Printf("Error refreshing database connection: %v", err)
+			lg.Error().Msgf("Error refreshing database connection: %v", err)
 		}
 	}
 }
@@ -203,7 +204,7 @@ func refreshDBConnection() error {
 	}
 
 	db = newDB
-	log.Println("Database connection refreshed")
+	lg.Info().Msg("Database connection refreshed")
 	return nil
 }
 
@@ -211,7 +212,7 @@ func InitZooKeeper(servers []string) {
 	var err error
 	ZkConn, eventChannel, err = zk.Connect(servers, time.Duration(models.AppConfig.ZookeepeerHeartBeatTime)*time.Second)
 	if err != nil {
-		log.Fatalf("Unable to connect to ZooKeeper: %v", err)
+		lg.Fatal().Err(err).Msg("Unable to connect to ZooKeeper: ")
 	}
 
 	// Set up a watcher on the ZooKeeper connection.
@@ -219,20 +220,20 @@ func InitZooKeeper(servers []string) {
 		for event := range ec {
 			switch event.State {
 			case zk.StateDisconnected:
-				log.Println("ZooKeeper disconnected. Attempting to reconnect...")
+				lg.Info().Msg("ZooKeeper disconnected. Attempting to reconnect...")
 				ZkConn, _, err = zk.Connect(servers, time.Duration(models.AppConfig.ZookeepeerHeartBeatTime)*time.Second) // Reassign to the global ZkConn
 				if err != nil {
-					log.Printf("Failed to reconnect to ZooKeeper: %v", err)
+					lg.Error().Msgf("Failed to reconnect to ZooKeeper: %v", err)
 				} else {
-					log.Println("Reconnected to ZooKeeper successfully.")
+					lg.Info().Msg("Reconnected to ZooKeeper successfully.")
 				}
 			case zk.StateExpired:
-				log.Println("ZooKeeper session expired. Re-establishing connection...")
+				lg.Info().Msg("ZooKeeper session expired. Re-establishing connection...")
 				ZkConn, _, err = zk.Connect(servers, time.Duration(models.AppConfig.ZookeepeerHeartBeatTime)*time.Second) // Reassign to the global ZkConn
 				if err != nil {
-					log.Printf("Failed to re-establish ZooKeeper connection: %v", err)
+					lg.Info().Msgf("Failed to re-establish ZooKeeper connection: %v", err)
 				} else {
-					log.Println("ZooKeeper connection re-established successfully.")
+					lg.Info().Msg("ZooKeeper connection re-established successfully.")
 				}
 			}
 		}

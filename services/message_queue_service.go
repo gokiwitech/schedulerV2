@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"schedulerV2/config"
 	"schedulerV2/models"
@@ -29,7 +28,7 @@ func processScheduledMessage(message *models.MessageQueue) error {
 	callbackResponse, err := sendCallback(message)
 	message.Status = models.PENDING
 	if err != nil {
-		log.Println("Error sending callback:", err)
+		lg.Error().Msgf("Error sending callback: %v", err)
 		handleRetry(message)
 	} else if callbackResponse.Status == StatusSuccess {
 		message.Status = models.COMPLETED
@@ -48,7 +47,7 @@ func processConditionalMessage(message *models.MessageQueue) error {
 	callbackResponse, err := sendCallback(message)
 	message.Status = models.PENDING
 	if err != nil {
-		log.Println("Error sending callback:", err)
+		lg.Error().Msgf("Error sending callback: %v", err)
 		message.RetryCount++
 	} else {
 		if callbackResponse.Status == StatusSuccess {
@@ -64,12 +63,12 @@ func processConditionalMessage(message *models.MessageQueue) error {
 func sendCallback(message *models.MessageQueue) (*models.CallbackResponseDTO, error) {
 	requestBody, err := json.Marshal(message.Payload)
 	if err != nil {
-		log.Println("error marshalling", message.Payload)
+		lg.Error().Msgf("error marshalling Payload: %v", message.Payload)
 		return nil, err
 	}
 
 	// Log the request body for debugging
-	log.Printf("Sending JSON payload to %s: %s", message.CallbackUrl, string(requestBody))
+	lg.Info().Msgf("Sending JSON payload to %s: %s", message.CallbackUrl, string(requestBody))
 
 	req, err := http.NewRequest("POST", message.CallbackUrl, bytes.NewBuffer(requestBody))
 	if err != nil {
@@ -117,7 +116,7 @@ func EnqueueMessage(messageQueue models.MessageQueue) (uint, error) {
 	if err := messageQueueRepository.Save(db, &message); err != nil {
 		return 0, err
 	}
-	log.Printf("Message with id %d pushed to MessageQueue table", message.ID)
+	lg.Info().Msgf("Message with id %d pushed to MessageQueue table", message.ID)
 	return message.ID, nil
 }
 
