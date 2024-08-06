@@ -9,5 +9,8 @@
   "messages_limit": 100,
   "dlq_message_limit": 20,
   "zookeeper_heart_beat_time": 10,
-  "internal_secret_key": "0inYh1ZsDlyFmjD2lAytkWvjElPXhc/n37qwPkE1u/K/hpYly+8zFFLXcdcBA6WqP4sCGq1yy4/gnMxbYKn0Dw=="
+  "internal_secret_key": "0inYh1ZsDlyFmjD2lAytkWvjElPXhc/n37qwPkE1u/K/hpYly+8zFFLXcdcBA6WqP4sCGq1yy4/gnMxbYKn0Dw==",
+  "service_name": "schedulerV2-local",
+  "otel_exporter_otlp_endpoint": "localhost:4317",
+  "insecure_mode": true
 }

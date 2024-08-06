@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"schedulerV2/config"
@@ -13,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 var lg zerolog.Logger
@@ -44,6 +46,12 @@ func init() {
 }
 
 func main() {
+
+	cleanup := config.InitTracer()
+	if cleanup != nil {
+		defer cleanup(context.Background())
+	}
+
 	portPtr := flag.String("port", ":9999", "the port to listen on")
 
 	// Parse the command-line arguments
@@ -56,13 +64,22 @@ func main() {
 		port = ":9929"
 	}
 
-	router := gin.New()
+	router := gin.Default()
 
+	router.Use(otelgin.Middleware(models.AppConfig.ServiceName))
+
+	schedulerV2 := router.Group("/scheduler/v2")
 	// Use zerolog for Gin's logging
-	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+	schedulerV2.Use(gin.LoggerWithConfig(gin.LoggerConfig{
 		Output: zerolog.ConsoleWriter{Out: os.Stdout},
 		Formatter: func(param gin.LogFormatterParams) string {
-			lg.Info().
+			entry := lg.Info()
+			if param.StatusCode >= 400 && param.StatusCode < 500 {
+				entry = lg.Warn()
+			} else if param.StatusCode >= 500 {
+				entry = lg.Error()
+			}
+			entry.
 				Str("method", param.Method).
 				Str("path", param.Path).
 				Int("status", param.StatusCode).
@@ -72,8 +89,6 @@ func main() {
 			return ""
 		},
 	}))
-
-	schedulerV2 := router.Group("/scheduler/v2")
 	schedulerV2.GET("/health", routers.HealthCheck)
 
 	schedulerV2.Use(middleware.InternalApiTokenValidator())

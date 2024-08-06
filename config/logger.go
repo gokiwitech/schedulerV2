@@ -14,7 +14,6 @@ var logFile *os.File
 
 // Returns logger with configuration
 func GetLogger(withCaller bool) zerolog.Logger {
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if gin.IsDebugging() {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
