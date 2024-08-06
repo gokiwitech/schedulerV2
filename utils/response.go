@@ -21,10 +21,10 @@ type DefaultHTTPResponse struct {
 
 // SuccessResponse sends a standard success response with a custom message.
 func SuccessResponse(c *gin.Context, payload interface{}, message string) {
-	c.JSON(http.StatusOK, DefaultHTTPResponse{Message: message, Data: payload, Status: true})
+	c.AbortWithStatusJSON(http.StatusOK, DefaultHTTPResponse{Message: message, Data: payload, Status: true})
 }
 
 // ErrorResponse sends a standard error response with a custom message and HTTP status code.
-func ErrorResponse(c *gin.Context, payload interface{}, code int, message string) {
-	c.JSON(code, DefaultHTTPResponse{Message: message, Data: payload, Status: false})
+func ErrorResponse(c *gin.Context, payload interface{}, code uint, message string) {
+	c.AbortWithStatusJSON(int(code), DefaultHTTPResponse{Message: message, Data: payload, Status: false})
 }

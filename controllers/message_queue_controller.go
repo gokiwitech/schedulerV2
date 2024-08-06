@@ -40,7 +40,7 @@ func EnqueueMessage(c *gin.Context) {
 
 	id, err := services.EnqueueMessage(mq)
 	if err != nil {
-		utils.ErrorResponse(c, nil, http.StatusInternalServerError, fmt.Sprintf("Failed to push the message:- %s", err.Error()))
+		utils.ErrorResponse(c, nil, http.StatusBadRequest, fmt.Sprintf("Failed to push the message:- %s", err.Error()))
 		return
 	}
 	utils.SuccessResponse(c, fmt.Sprintf("Message with id %d is successfully pushed", id), utils.SuccessMessage)

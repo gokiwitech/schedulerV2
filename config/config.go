@@ -66,6 +66,14 @@ func LoadConfig() error {
 		return fmt.Errorf("required secret_key to start the service")
 	}
 
+	if len(models.AppConfig.ServiceName) == 0 {
+		return fmt.Errorf("service name cannot be null")
+	}
+
+	if len(models.AppConfig.CollectorURL) == 0 {
+		return fmt.Errorf("OtelExporterOtlpEndpoint value cannot be null")
+	}
+
 	return nil
 }
 

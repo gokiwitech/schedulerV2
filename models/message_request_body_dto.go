@@ -32,5 +32,5 @@ func (m *MessageRequestBodyDto) ToMessageQueue() (MessageQueue, error) {
 		MessageType: m.MessageType,
 		ServiceName: m.ServiceName,
 		Frequency:   m.Frequency,
-	}, nil
+	}, err
 }

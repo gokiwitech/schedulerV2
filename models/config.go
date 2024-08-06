@@ -13,6 +13,9 @@ type Config struct {
 	DlqMessageLimit         int    `json:"dlq_message_limit"`
 	ZookeepeerHeartBeatTime int    `json:"zookeeper_heart_beat_time"`
 	InternalSecretKey       string `json:"internal_secret_key"`
+	ServiceName             string `json:"service_name"`
+	CollectorURL            string `json:"otel_exporter_otlp_endpoint"`
+	InsecureMode            bool   `json:"insecure_mode"`
 }
 
 // AppConfig holds the application's configuration.
