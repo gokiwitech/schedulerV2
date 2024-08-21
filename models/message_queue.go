@@ -19,8 +19,8 @@ const (
 )
 
 const (
-	SCHEDULED   MessageTypeEnums = "SCHEDULED"
-	CONDITIONAL MessageTypeEnums = "CONDITIONAL"
+	SCHEDULED MessageTypeEnums = "SCHEDULED"
+	CRON      MessageTypeEnums = "CRON"
 )
 
 type MessageQueue struct {
@@ -57,7 +57,7 @@ func (m *MessageQueue) validateMessageType() error {
 	switch m.MessageType {
 	case SCHEDULED:
 		return nil
-	case CONDITIONAL:
+	case CRON:
 		return m.validateFrequency()
 	default:
 		return fmt.Errorf("invalid MessageType: %s", m.MessageType)
@@ -71,7 +71,7 @@ func (m *MessageQueue) validatePayloadJSON() error {
 
 func (m *MessageQueue) validateFrequency() error {
 	if len(m.Frequency) == 0 {
-		return errors.New("empty frequency value for CONDITIONAL message")
+		return errors.New("empty frequency value for Cron message")
 	}
 	_, err := cron.ParseStandard(m.Frequency)
 	return err

@@ -30,7 +30,7 @@ func StartSchedulers() {
 				go updateScheduledDLQMessageStatus()
 			case <-tickerProcess.C:
 				go scanAndProcessScheduledMessages()
-				go scanAndProcessConditionalMessages()
+				go scanAndProcessCronMessages()
 			}
 		}
 	}()
@@ -156,24 +156,24 @@ func scanAndProcessScheduledMessages() {
 	wg.Wait()
 }
 
-func scanAndProcessConditionalMessages() {
-	lg.Info().Msg("Scanning & Processing conditional messages...")
+func scanAndProcessCronMessages() {
+	lg.Info().Msg("Scanning & Processing cron messages...")
 
 	db, err := config.GetDBConnection()
 	if err != nil {
 		lg.Error().Msgf("Error getting database connection: %v", err)
 		return
 	}
-	// Fetch conditional messages
+	// Fetch cron messages
 	nowPlusOneSecond := time.Now().Unix() + 1
-	conditionalMessages, err := messageQueueRepository.FindByStatusAndNextRetryAndRetryCountAndIsDLQ(db, string(models.PENDING), string(models.CONDITIONAL), false, models.AppConfig.DlqMessageLimit, nowPlusOneSecond)
+	cronMessages, err := messageQueueRepository.FindByStatusAndNextRetryAndRetryCountAndIsDLQ(db, string(models.PENDING), string(models.CRON), false, models.AppConfig.DlqMessageLimit, nowPlusOneSecond)
 	if err != nil {
-		lg.Error().Msgf("Error fetching conditional messages: %v", err)
+		lg.Error().Msgf("Error fetching cron messages: %v", err)
 		return
 	}
 
 	var wg sync.WaitGroup
-	for _, message := range conditionalMessages {
+	for _, message := range cronMessages {
 		wg.Add(1)
 		go func(msg models.MessageQueue) {
 			defer wg.Done()
@@ -214,8 +214,8 @@ func scanAndProcessConditionalMessages() {
 
 			// Time to process the message
 			lg.Info().Msgf("Processing message ID %d", msg.ID)
-			if err := processConditionalMessage(&msg); err != nil {
-				lg.Error().Msgf("Error processing conditional message ID %d: %v", msg.ID, err)
+			if err := processCronMessage(&msg); err != nil {
+				lg.Error().Msgf("Error processing cron message ID %d: %v", msg.ID, err)
 			}
 		}(message)
 	}
