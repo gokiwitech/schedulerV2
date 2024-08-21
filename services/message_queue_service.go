@@ -38,7 +38,7 @@ func processScheduledMessage(message *models.MessageQueue) error {
 	return messageQueueRepository.Save(db, message)
 }
 
-func processConditionalMessage(message *models.MessageQueue) error {
+func processCronMessage(message *models.MessageQueue) error {
 	db, err := config.GetDBConnection()
 	if err != nil {
 		return fmt.Errorf("error getting database connection: %v", err)
