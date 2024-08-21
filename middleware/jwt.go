@@ -10,7 +10,7 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-const InternalApiTokenHeader = "X-Internal-Api-Token" // Replace with actual header key
+const InternalApiTokenHeader = "internal-api-token" // Replace with actual header key
 
 func InternalApiTokenValidator() gin.HandlerFunc {
 	return func(c *gin.Context) {
