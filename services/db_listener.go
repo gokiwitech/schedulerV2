@@ -185,6 +185,12 @@ func scanAndProcessCronMessages() {
 				return
 			}
 
+			if msg.Count != -1 && msg.Count < msg.RetryCount {
+				msg.Status = models.COMPLETED
+				messageQueueRepository.Save(db, &msg)
+				return
+			}
+
 			// Calculate the next run time from the next retry time
 			nextRetryTime := time.Unix(msg.NextRetry, 0).UTC()
 			nextRun := schedule.Next(nextRetryTime)

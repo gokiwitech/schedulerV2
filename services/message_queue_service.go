@@ -16,7 +16,7 @@ var httpClient = &http.Client{}
 
 const (
 	ContentTypeApplicationJSON = "application/json"
-	StatusSuccess              = "Success"
+	StatusSuccess              = "SUCCESS"
 )
 
 func processScheduledMessage(message *models.MessageQueue) error {
@@ -48,14 +48,12 @@ func processCronMessage(message *models.MessageQueue) error {
 	message.Status = models.PENDING
 	if err != nil {
 		lg.Error().Msgf("Error sending callback: %v", err)
-		message.RetryCount++
 	} else {
 		if callbackResponse.Status == StatusSuccess {
-			message.RetryCount = 0
-			message.NextRetry = time.Now().Unix()
-		} else {
-			message.RetryCount++
+			message.Status = models.COMPLETED
 		}
+		message.RetryCount++
+		message.NextRetry = time.Now().Unix()
 	}
 	return messageQueueRepository.Save(db, message)
 }
@@ -110,6 +108,7 @@ func EnqueueMessage(messageQueue models.MessageQueue) (uint, error) {
 		RetryCount:  messageQueue.RetryCount,
 		NextRetry:   messageQueue.NextRetry,
 		ServiceName: messageQueue.ServiceName,
+		Count:       messageQueue.Count,
 		MessageType: messageQueue.MessageType,
 		Frequency:   messageQueue.Frequency,
 	}
