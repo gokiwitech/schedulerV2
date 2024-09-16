@@ -13,6 +13,7 @@ type MessageRequestBodyDto struct {
 	ServiceName string             `json:"serviceName"`
 	MessageType MessageTypeEnums   `json:"messageType" binding:"required"`
 	Frequency   string             `json:"frequency"`
+	Count       int                `json:"count"`
 }
 
 func (m *MessageRequestBodyDto) ToMessageQueue() (MessageQueue, error) {
@@ -31,6 +32,7 @@ func (m *MessageRequestBodyDto) ToMessageQueue() (MessageQueue, error) {
 		NextRetry:   m.NextRetry,
 		MessageType: m.MessageType,
 		ServiceName: m.ServiceName,
+		Count:       m.Count,
 		Frequency:   m.Frequency,
 	}, err
 }
