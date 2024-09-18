@@ -28,8 +28,10 @@ func EnqueueMessage(c *gin.Context) {
 	if claims, exists := c.Get("claims"); exists {
 		if claimsMap, ok := claims.(jwt.MapClaims); ok {
 			serviceName, found := claimsMap["serviceName"]
+			userId, found := claimsMap["userId"]
 			if found {
 				mq.ServiceName = fmt.Sprintf("%v", serviceName)
+				mq.UserId = fmt.Sprintf("%v", userId)
 			} else {
 				// Handle the case where serviceName is not present
 				utils.ErrorResponse(c, nil, http.StatusUnauthorized, "Invalid/Malformed Token")

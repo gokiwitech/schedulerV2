@@ -74,7 +74,7 @@ func sendCallback(message *models.MessageQueue) (*models.CallbackResponseDTO, er
 		return nil, err
 	}
 
-	internalApiToken, err := middleware.GenerateApiToken(message.ServiceName, message.ServiceName)
+	internalApiToken, err := middleware.GenerateApiToken(message.ServiceName, message.UserId)
 	if err != nil {
 		return nil, fmt.Errorf("error generating internal API token: %v", err)
 	}
@@ -115,6 +115,7 @@ func EnqueueMessage(messageQueue models.MessageQueue) (uint, error) {
 		RetryCount:  messageQueue.RetryCount,
 		NextRetry:   messageQueue.NextRetry,
 		ServiceName: messageQueue.ServiceName,
+		UserId:      messageQueue.UserId,
 		Count:       messageQueue.Count,
 		MessageType: messageQueue.MessageType,
 		Frequency:   messageQueue.Frequency,
