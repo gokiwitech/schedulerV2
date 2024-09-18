@@ -2,9 +2,11 @@ package middleware
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"schedulerV2/models"
 	"schedulerV2/utils"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -58,4 +60,22 @@ func InternalApiTokenValidator() gin.HandlerFunc {
 			c.Abort()
 		}
 	}
+}
+
+func GenerateApiToken(serviceName string, userId string) (string, error) {
+	claims := jwt.MapClaims{
+		"serviceName": serviceName,
+		"userId":      userId,
+		"tokenType":   InternalApiTokenHeader,
+		"exp":         time.Now().Add(time.Duration(models.AppConfig.InternalTokenApiExpiry) * time.Millisecond).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	tokenString, err := token.SignedString([]byte(InternalApiTokenHeader))
+	if err != nil {
+		return "", fmt.Errorf("error signing token: %v", err)
+	}
+
+	return tokenString, nil
 }

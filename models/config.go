@@ -11,6 +11,7 @@ type Config struct {
 	ZookeeperHosts          string `json:"zookeeper_hosts"`
 	MessagesLimit           int    `json:"messages_limit"`
 	DlqMessageLimit         int    `json:"dlq_message_limit"`
+	InternalTokenApiExpiry  int    `json:"internal_token_api_expiry"`
 	ZookeepeerHeartBeatTime int    `json:"zookeeper_heart_beat_time"`
 	InternalSecretKey       string `json:"internal_secret_key"`
 	ServiceName             string `json:"service_name"`
