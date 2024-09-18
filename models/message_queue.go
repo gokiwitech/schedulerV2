@@ -35,6 +35,7 @@ type MessageQueue struct {
 	Count       int                `json:"count"`
 	ServiceName string             `json:"service_name"`
 	MessageType MessageTypeEnums   `json:"message_type"`
+	UserId      string             `json:"user_id"`
 	Frequency   string             `json:"frequency"`
 }
 
