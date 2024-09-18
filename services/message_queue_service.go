@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"schedulerV2/config"
+	"schedulerV2/middleware"
 	"schedulerV2/models"
 	"time"
 
@@ -73,7 +74,13 @@ func sendCallback(message *models.MessageQueue) (*models.CallbackResponseDTO, er
 		return nil, err
 	}
 
+	internalApiToken, err := middleware.GenerateApiToken(message.ServiceName, message.ServiceName)
+	if err != nil {
+		return nil, fmt.Errorf("error generating internal API token: %v", err)
+	}
+
 	req.Header.Set("Content-Type", ContentTypeApplicationJSON)
+	req.Header.Set("internal-api-token", internalApiToken)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
