@@ -2,10 +2,12 @@ package middleware
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"schedulerV2/models"
 	"schedulerV2/utils"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -63,19 +65,52 @@ func InternalApiTokenValidator() gin.HandlerFunc {
 }
 
 func GenerateApiToken(serviceName string, userId string) (string, error) {
+
+	now := time.Now()
+	expirationTime := now.Add(time.Duration(models.AppConfig.InternalTokenApiExpiry) * time.Millisecond)
+
 	claims := jwt.MapClaims{
 		"serviceName": serviceName,
 		"userId":      userId,
-		"tokenType":   InternalApiTokenHeader,
-		"exp":         time.Now().Add(time.Duration(models.AppConfig.InternalTokenApiExpiry) * time.Millisecond).Unix(),
+		"iat":         expirationTime.Unix(),
+		"exp":         expirationTime.Unix(),
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	// Create the header
+	header := map[string]interface{}{
+		"alg":       "HS512",
+		"tokenType": InternalApiTokenHeader,
+	}
 
-	tokenString, err := token.SignedString([]byte(InternalApiTokenHeader))
+	// Encode header
+	headerJSON, err := json.Marshal(header)
+	if err != nil {
+		return "", fmt.Errorf("error encoding header: %v", err)
+	}
+	encodedHeader := base64.RawURLEncoding.EncodeToString(headerJSON)
+
+	// Encode payload
+	payloadJSON, err := json.Marshal(claims)
+	if err != nil {
+		return "", fmt.Errorf("error encoding claims: %v", err)
+	}
+	encodedPayload := base64.RawURLEncoding.EncodeToString(payloadJSON)
+
+	// Create signature
+	signingInput := strings.Join([]string{encodedHeader, encodedPayload}, ".")
+
+	// Decode the InternalSecretKey from base64
+	decodedKey, err := base64.StdEncoding.DecodeString(models.AppConfig.InternalSecretKey)
+	if err != nil {
+		return "", fmt.Errorf("error decoding InternalSecretKey: %v", err)
+	}
+
+	signature, err := jwt.SigningMethodHS512.Sign(signingInput, decodedKey)
 	if err != nil {
 		return "", fmt.Errorf("error signing token: %v", err)
 	}
+	// Combine to form the token
+	token := strings.Join([]string{encodedHeader, encodedPayload, signature}, ".")
 
-	return tokenString, nil
+	return token, nil
 }
