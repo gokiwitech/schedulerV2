@@ -137,6 +137,12 @@ func scanAndProcessScheduledMessages() {
 				return
 			}
 
+			if msg.RetryCount >= models.AppConfig.DlqMessageLimit {
+				msg.Status = models.COMPLETED
+				messageQueueRepository.Save(db, &msg)
+				return
+			}
+
 			defer lock.Release()
 
 			// Update the message status to IN_PROGRESS in the database

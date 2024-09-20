@@ -8,7 +8,6 @@ import (
 	"schedulerV2/config"
 	"schedulerV2/middleware"
 	"schedulerV2/models"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -98,7 +97,7 @@ func sendCallback(message *models.MessageQueue) (*models.CallbackResponseDTO, er
 
 func handleRetry(message *models.MessageQueue) {
 	message.RetryCount++
-	message.NextRetry = time.Now().Unix() + int64(message.RetryCount)
+	message.NextRetry += 1
 }
 
 func EnqueueMessage(messageQueue models.MessageQueue) (uint, error) {
