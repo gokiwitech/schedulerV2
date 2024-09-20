@@ -13,7 +13,7 @@ type MessageRequestBodyDto struct {
 	ServiceName  string             `json:"serviceName"`
 	UserId       string             `json:"userId"`
 	MessageType  MessageTypeEnums   `json:"messageType" binding:"required"`
-	TimeDuration int64              `json:"time_duration"`
+	TimeDuration int64              `json:"timeDuration"`
 	Count        int                `json:"count"`
 }
 
