@@ -31,7 +31,7 @@ func processScheduledMessage(message *models.MessageQueue) error {
 	if err != nil {
 		lg.Error().Msgf("Error sending callback: %v", err)
 		handleRetry(message)
-	} else if callbackResponse.Status == StatusSuccess {
+	} else if callbackResponse.Data.Status == StatusSuccess {
 		message.Status = models.COMPLETED
 	} else {
 		handleRetry(message)
@@ -50,11 +50,11 @@ func processCronMessage(message *models.MessageQueue) error {
 	if err != nil {
 		lg.Error().Msgf("Error sending callback: %v", err)
 	} else {
-		if callbackResponse.Status == StatusSuccess {
+		if callbackResponse.Data.Status == StatusSuccess {
 			message.Status = models.COMPLETED
 		}
 		message.RetryCount++
-		message.NextRetry = time.Now().Unix()
+		message.NextRetry += message.TimeDuration
 	}
 	return messageQueueRepository.Save(db, message)
 }
@@ -108,17 +108,17 @@ func EnqueueMessage(messageQueue models.MessageQueue) (uint, error) {
 	}
 
 	message := models.MessageQueue{
-		Payload:     messageQueue.Payload,
-		CallbackUrl: messageQueue.CallbackUrl,
-		Status:      messageQueue.Status,
-		IsDLQ:       messageQueue.IsDLQ,
-		RetryCount:  messageQueue.RetryCount,
-		NextRetry:   messageQueue.NextRetry,
-		ServiceName: messageQueue.ServiceName,
-		UserId:      messageQueue.UserId,
-		Count:       messageQueue.Count,
-		MessageType: messageQueue.MessageType,
-		Frequency:   messageQueue.Frequency,
+		Payload:      messageQueue.Payload,
+		CallbackUrl:  messageQueue.CallbackUrl,
+		Status:       messageQueue.Status,
+		IsDLQ:        messageQueue.IsDLQ,
+		RetryCount:   messageQueue.RetryCount,
+		NextRetry:    messageQueue.NextRetry,
+		ServiceName:  messageQueue.ServiceName,
+		UserId:       messageQueue.UserId,
+		Count:        messageQueue.Count,
+		MessageType:  messageQueue.MessageType,
+		TimeDuration: messageQueue.TimeDuration,
 	}
 	if err := messageQueueRepository.Save(db, &message); err != nil {
 		return 0, err

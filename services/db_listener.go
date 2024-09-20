@@ -8,8 +8,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-
-	"github.com/robfig/cron"
 )
 
 var messageQueueRepository *repositories.MessageQueueRepository
@@ -178,13 +176,6 @@ func scanAndProcessCronMessages() {
 		go func(msg models.MessageQueue) {
 			defer wg.Done()
 
-			// Parse the frequency cron expression
-			schedule, err := cron.ParseStandard(msg.Frequency)
-			if err != nil {
-				lg.Error().Msgf("Invalid cron expression for message ID %d: %v", msg.ID, err)
-				return
-			}
-
 			if msg.Count != -1 && msg.Count < msg.RetryCount {
 				msg.Status = models.COMPLETED
 				messageQueueRepository.Save(db, &msg)
@@ -193,8 +184,7 @@ func scanAndProcessCronMessages() {
 
 			// Calculate the next run time from the next retry time
 			nextRetryTime := time.Unix(msg.NextRetry, 0).UTC()
-			nextRun := schedule.Next(nextRetryTime)
-			if time.Now().UTC().Before(nextRun) {
+			if time.Now().UTC().Before(nextRetryTime) {
 				return
 			}
 
