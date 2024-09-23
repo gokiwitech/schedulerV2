@@ -1,6 +1,7 @@
 package services
 
 import (
+	"math"
 	"schedulerV2/config"
 	"schedulerV2/models"
 	"schedulerV2/repositories"
@@ -170,7 +171,7 @@ func scanAndProcessCronMessages() {
 	}
 	// Fetch cron messages
 	nowPlusOneSecond := time.Now().Unix() + 1
-	cronMessages, err := messageQueueRepository.FindByStatusAndNextRetryAndRetryCountAndIsDLQ(db, string(models.PENDING), string(models.CRON), false, models.AppConfig.DlqMessageLimit, nowPlusOneSecond)
+	cronMessages, err := messageQueueRepository.FindByStatusAndNextRetryAndRetryCountAndIsDLQ(db, string(models.PENDING), string(models.CRON), false, int(math.Inf(1)), nowPlusOneSecond)
 	if err != nil {
 		lg.Error().Msgf("Error fetching cron messages: %v", err)
 		return
