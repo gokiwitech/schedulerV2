@@ -48,13 +48,11 @@ func processCronMessage(message *models.MessageQueue) error {
 	message.Status = models.PENDING
 	if err != nil {
 		lg.Error().Msgf("Error sending callback: %v", err)
-	} else {
-		if callbackResponse.Data.Status == StatusSuccess {
-			message.Status = models.COMPLETED
-		}
-		message.RetryCount++
-		message.NextRetry += message.TimeDuration
+	} else if callbackResponse.Data.Status == StatusSuccess {
+		message.Status = models.COMPLETED
 	}
+	message.RetryCount++
+	message.NextRetry += message.TimeDuration
 	return messageQueueRepository.Save(db, message)
 }
 
