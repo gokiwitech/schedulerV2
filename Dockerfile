@@ -3,7 +3,7 @@ FROM golang:1.19-alpine as builder
 RUN mkdir /build
 WORKDIR /build
 COPY . /build/
-RUN GOOS=linux go build -a -o schedulerV2 .
+RUN GOOS=linux GOARCH=amd64 go build -v schedulerV2 .
 
 
 # executable
