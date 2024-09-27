@@ -5,5 +5,6 @@ type CallbackResponseDTO struct {
 }
 
 type Data struct {
-	Status string `json:"status"`
+	Status   string `json:"status"`
+	Interval int64  `json:"interval"`
 }

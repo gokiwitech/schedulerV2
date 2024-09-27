@@ -8,6 +8,7 @@ import (
 	"schedulerV2/config"
 	"schedulerV2/middleware"
 	"schedulerV2/models"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -17,6 +18,7 @@ var httpClient = &http.Client{}
 const (
 	ContentTypeApplicationJSON = "application/json"
 	StatusSuccess              = "SUCCESS"
+	StatusFailure              = "FAILURE"
 )
 
 func processScheduledMessage(message *models.MessageQueue) error {
@@ -46,13 +48,16 @@ func processCronMessage(message *models.MessageQueue) error {
 
 	callbackResponse, err := sendCallback(message)
 	message.Status = models.PENDING
+	finalRetry := message.TimeDuration
 	if err != nil {
 		lg.Error().Msgf("Error sending callback: %v", err)
 	} else if callbackResponse.Data.Status == StatusSuccess {
 		message.Status = models.COMPLETED
+	} else if callbackResponse.Data.Status == StatusFailure && callbackResponse.Data.Interval != 0 {
+		finalRetry = callbackResponse.Data.Interval
 	}
 	message.RetryCount++
-	message.NextRetry += message.TimeDuration
+	message.NextRetry = time.Now().Unix() + finalRetry
 	return messageQueueRepository.Save(db, message)
 }
 
@@ -95,7 +100,7 @@ func sendCallback(message *models.MessageQueue) (*models.CallbackResponseDTO, er
 
 func handleRetry(message *models.MessageQueue) {
 	message.RetryCount++
-	message.NextRetry += 1
+	message.NextRetry = time.Now().Unix() + int64(message.RetryCount)
 }
 
 func EnqueueMessage(messageQueue models.MessageQueue) (uint, error) {
