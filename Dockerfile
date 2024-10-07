@@ -31,6 +31,7 @@ FROM alpine:latest
 
 WORKDIR /root/
 COPY --from=builder /build/schedulerV2 .
+COPY .env /root/.env
 
 # Copy the config file passed as a build argument
 ARG CONFIG_FILE
