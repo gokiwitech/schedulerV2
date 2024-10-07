@@ -20,6 +20,7 @@ import (
 var lg zerolog.Logger
 
 func init() {
+
 	// Initialize the logger
 	lg = config.GetLogger(true) // Set to true if you want to include the caller information in logs
 
@@ -29,8 +30,7 @@ func init() {
 	}
 
 	// Load the configuration for the specified environment
-	err := config.LoadConfig("/root/config/environments/staging.json")
-	if err != nil {
+	if err := config.LoadConfig(); err != nil {
 		lg.Fatal().Err(err).Msg("Failed to load configuration")
 	}
 
@@ -40,26 +40,32 @@ func init() {
 	}
 
 	config.InitZooKeeper(strings.Split(models.AppConfig.ZookeeperHosts, ",")) // list of zookeeper servers
+
 	services.InitServices()
+
 }
 
 func main() {
+
 	cleanup := config.InitTracer()
 	if cleanup != nil {
 		defer cleanup(context.Background())
 	}
 
 	portPtr := flag.String("port", ":9999", "the port to listen on")
+
 	// Parse the command-line arguments
 	flag.Parse()
 
 	// Retrieve the port number from the flag
 	port := *portPtr
+
 	if len(port) == 0 {
-		port = ":9999" // Default to port 9999
+		port = ":9929"
 	}
 
 	router := gin.Default()
+
 	router.Use(otelgin.Middleware(models.AppConfig.ServiceName))
 
 	schedulerV2 := router.Group("/scheduler/v2")
@@ -83,8 +89,8 @@ func main() {
 			return ""
 		},
 	}))
-
 	schedulerV2.GET("/health", routers.HealthCheck)
+
 	schedulerV2.Use(middleware.InternalApiTokenValidator())
 	routers.SetupRouter(schedulerV2)
 
