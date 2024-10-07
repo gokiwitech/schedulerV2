@@ -8,8 +8,9 @@ env:
   PROJECT_ID: kiwi-staging-415508
   REGION: asia-south1
   GAR_LOCATION: asia-south1-docker.pkg.dev/kiwi-staging-415508/cg-scheduler-v2
-  CLUSTER_NAME: staging-k8s
+  CLUSTER_NAME: staging-k8s  # Change this based on the environment
   CLUSTER_ZONE: asia-south1
+  CONFIG_FILE: staging.json  # Default config file
 
 jobs:
   build-push-artifact:
@@ -28,6 +29,22 @@ jobs:
 
       - name: Configure Docker to use the gcloud command-line tool as a credential helper
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Set the environment and copy config file
+        run: |
+          if [[ "${{ env.CLUSTER_NAME }}" == "staging-k8s" ]]; then
+            echo "Using staging configuration"
+            cp config/environments/staging.json config/environments/config.json
+          elif [[ "${{ env.CLUSTER_NAME }}" == "pre-prod-k8s" ]]; then
+            echo "Using pre-production configuration"
+            cp config/environments/pre-prod.json config/environments/config.json
+          elif [[ "${{ env.CLUSTER_NAME }}" == "prod-k8s" ]]; then
+            echo "Using production configuration"
+            cp config/environments/prod.json config/environments/config.json
+          else
+            echo "No valid cluster name provided. Exiting."
+            exit 1
+          fi
 
       - name: Build Docker image
         run: |
