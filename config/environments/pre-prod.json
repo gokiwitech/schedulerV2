@@ -1,0 +1,18 @@
+{
+  "zookeeper_hosts": "zookeeper-preprod.gokiwi.in",
+  "database_dsn": "host=10.75.112.4 user=postgres password=NxahPfML6zK1Kn5P dbname=scheduler-v2 port=5432 TimeZone=Asia/Kolkata",
+  "database_host": "10.75.112.4",
+  "database_port": "5432",
+  "database_name": "scheduler",
+  "database_user": "postgres",
+  "database_region": "asia-south1",
+  "messages_limit": 100,
+  "dlq_message_limit": 20,
+  "zookeeper_heart_beat_time": 10,
+  "internal_secret_key": "0inYh1ZsDlyFmjD2lAytkWvjElPXhc/n37qwPkE1u/K/hpYly+8zFFLXcdcBA6WqP4sCGq1yy4/gnMxbYKn0Dw==",
+  "internal_token_api_expiry": 30000000,
+  "service_name": "schedulerV2",
+  "otel_exporter_otlp_endpoint": "localhost:4317",
+  "insecure_mode": true
+}
+
