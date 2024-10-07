@@ -1,6 +1,6 @@
 *.pem
 schedulerV2
 config/environments/*.json
-!config/environments/local.json
+config/environments/local.json
 *.log
 !.env
