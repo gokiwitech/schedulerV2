@@ -7,8 +7,7 @@ RUN GOOS=linux GOARCH=amd64 go build -v -o schedulerV2 .
 
 # executable
 FROM alpine:latest
-RUN mkdir /root
-WORKDIR /root
+WORKDIR /root/
 COPY --from=builder /build/schedulerV2 .
 COPY .env /root/.env
 EXPOSE 9999
