@@ -14,4 +14,4 @@
   "service_name": "schedulerV2",
   "otel_exporter_otlp_endpoint": "localhost:4317",
   "insecure_mode": true
-}
+} 
