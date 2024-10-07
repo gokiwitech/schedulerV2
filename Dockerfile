@@ -9,6 +9,6 @@ RUN GOOS=linux GOARCH=amd64 go build -v -o schedulerV2 .
 FROM alpine:latest
 WORKDIR /root/
 COPY --from=builder /build/schedulerV2 .
-COPY .env /root/.env  # Ensure the .env file is copied to the final image
+COPY . .  # Ensure the .env file is copied to the final image
 EXPOSE 9999
 CMD ["./schedulerV2", "-port", ":9999"]
