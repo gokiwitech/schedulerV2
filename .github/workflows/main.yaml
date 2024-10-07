@@ -2,13 +2,13 @@ name: Build and Push to Artifact Registry
 
 on:
   push:
-    branches: ["main"]
+    branches: ["gcp-preprod"]
 
 env:
-  PROJECT_ID: kiwi-staging-415508
+  PROJECT_ID: kiwi-preprod
   REGION: asia-south1
-  GAR_LOCATION: asia-south1-docker.pkg.dev/kiwi-staging-415508/cg-scheduler-v2
-  CLUSTER_NAME: staging-k8s
+  GAR_LOCATION: asia-south1-docker.pkg.dev/kiwi-preprod/cg-scheduler-v2
+  CLUSTER_NAME: preprod-k8s
   CLUSTER_ZONE: asia-south1
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v1
         with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          credentials_json: ${{ secrets.GCP_PREPROD_SERVICE_ACCOUNT_KEY  }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
