@@ -3,3 +3,4 @@ schedulerV2
 config/environments/staging.json
 config/environments/local.json
 *.log
+!.env
