@@ -1,12 +1,14 @@
 {
   "zookeeper_hosts": "zk-cs.datastore-ns.svc.cluster.local:2181",
-  "database_dsn": "host=10.209.112.5 user=postgres password=NxahPfML6zK1Kn5P dbname=scheduler-v2 port=5432 TimeZone=Asia/Kolkata",
+  "database_dsn": "host=10.209.112.5 user=postgres dbname=scheduler-v2 port=5432 TimeZone=Asia/Kolkata",
+  "database_pwd": "sofnodnf",
   "database_host": "10.209.112.5",
   "database_port": "5432",
   "database_name": "scheduler",
   "database_user": "gokiwiuser",
   "database_region": "ap-south-1",
   "messages_limit": 100,
+  "aws_pwd_required": false,
   "dlq_message_limit": 20,
   "zookeeper_heart_beat_time": 10,
   "internal_secret_key": "0inYh1ZsDlyFmjD2lAytkWvjElPXhc/n37qwPkE1u/K/hpYly+8zFFLXcdcBA6WqP4sCGq1yy4/gnMxbYKn0Dw==",
@@ -14,4 +16,4 @@
   "service_name": "schedulerV2",
   "otel_exporter_otlp_endpoint": "localhost:4317",
   "insecure_mode": true
-} 
+}

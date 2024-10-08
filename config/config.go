@@ -117,9 +117,13 @@ func GetDBConnection() (*gorm.DB, error) {
 
 // initDB initializes the database connection with logging and automigration
 func initDB() (*gorm.DB, error) {
-	password := GetLatestDBPassword()
-	if password == "" {
-		return nil, fmt.Errorf("failed to get database password")
+
+	password := models.AppConfig.DatabasePwd
+	if models.AppConfig.AwsPwdRequired {
+		password = GetLatestDBPassword()
+		if password == "" {
+			return nil, fmt.Errorf("failed to get database password")
+		}
 	}
 
 	dsn := fmt.Sprintf("host=%s user=%s dbname=%s port=%s password=%s",
