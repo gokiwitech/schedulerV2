@@ -13,6 +13,8 @@ type Config struct {
 	DlqMessageLimit         int    `json:"dlq_message_limit"`
 	InternalTokenApiExpiry  int    `json:"internal_token_api_expiry"`
 	ZookeepeerHeartBeatTime int    `json:"zookeeper_heart_beat_time"`
+	AwsPwdRequired          bool   `json:"aws_pwd_required"`
+	DatabasePwd             string `json:"database_pwd"`
 	InternalSecretKey       string `json:"internal_secret_key"`
 	ServiceName             string `json:"service_name"`
 	CollectorURL            string `json:"otel_exporter_otlp_endpoint"`
