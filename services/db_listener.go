@@ -218,6 +218,8 @@ func scanAndProcessCronMessages() {
 			// Time to process the message
 			lg.Info().Msgf("Processing message ID %d", msg.ID)
 			if err := processCronMessage(&msg); err != nil {
+				message.Status = models.PENDING
+				messageQueueRepository.Save(db, &msg)
 				lg.Error().Msgf("Error processing cron message ID %d: %v", msg.ID, err)
 			}
 		}(message)
