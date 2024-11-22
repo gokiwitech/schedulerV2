@@ -13,6 +13,7 @@ import (
 func SetupRouter(schedulerV2 *gin.RouterGroup) {
 	gin.Recovery()
 	schedulerV2.POST("/api/message", controllers.EnqueueMessage)
+	schedulerV2.PATCH("service/threshold", controllers.UpdateServiceThreshold)
 }
 
 // healthCheck defines the health check route handler

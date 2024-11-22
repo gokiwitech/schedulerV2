@@ -9,13 +9,17 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 var messageQueueRepository *repositories.MessageQueueRepository
+var thresholdRepository *repositories.ServiceThresholdRepository
 var lg = config.GetLogger(true)
 
 func InitServices() {
 	messageQueueRepository = repositories.NewMessageQueueRepository()
+	thresholdRepository = repositories.NewServiceThresholdRepository()
 }
 
 func StartSchedulers() {
@@ -127,6 +131,23 @@ func scanAndProcessScheduledMessages() {
 		go func(msg models.MessageQueue) {
 			// Decrement the counter when the go routine completes
 			defer wg.Done()
+			// we might need to add another state the like DEAD state so that we don't unneccsarily query those message them is a waste of CPU
+			currentTime := time.Now().Unix()
+			threshold, err := thresholdRepository.FindByServiceName(db, msg.ServiceName, currentTime)
+			if err != nil {
+				if err != gorm.ErrRecordNotFound {
+					lg.Error().Msgf("Error checking service threshold for message ID %d: %v", msg.ID, err)
+				}
+				lg.Error().Msgf("Error getting service threshold for message ID %d: %v", msg.ID, err)
+				return
+			} else {
+				// Skip processing if threshold is exceeded
+				if !thresholdRepository.IsWithinThreshold(threshold) {
+					lg.Info().Msgf("Threshold exceeded for service %s, skipping message ID %d", msg.ServiceName, msg.ID)
+					return
+				}
+			}
+
 			lock := zkclient.NewDistributedLock(config.ZkConn, zkclient.LockBasePath, zkclient.LockName+strconv.Itoa(int(msg.ID)))
 			acquired, err := lock.Acquire()
 			if err != nil {
@@ -155,6 +176,8 @@ func scanAndProcessScheduledMessages() {
 			// Proceed with processing the message
 			if err := processScheduledMessage(&msg); err != nil {
 				lg.Error().Msgf("Error processing message ID %d: %v", msg.ID, err)
+				message.Status = models.PENDING
+				messageQueueRepository.Save(db, &msg)
 			}
 		}(message)
 	}

@@ -26,6 +26,13 @@ func processScheduledMessage(message *models.MessageQueue) error {
 	if err != nil {
 		return fmt.Errorf("error getting database connection: %v", err)
 	}
+	currentTime := time.Now().Unix()
+
+	// Find and update threshold count
+	threshold, err := thresholdRepository.FindByServiceName(db, message.ServiceName, currentTime)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return fmt.Errorf("error finding service threshold: %v", err)
+	}
 
 	callbackResponse, err := sendCallback(message)
 	message.Status = models.PENDING
@@ -34,6 +41,12 @@ func processScheduledMessage(message *models.MessageQueue) error {
 		handleRetry(message)
 	} else if callbackResponse.Data.Status == StatusSuccess {
 		message.Status = models.COMPLETED
+		// Increment threshold count on successful processing
+		if threshold != nil {
+			if err := thresholdRepository.IncrementCount(db, threshold); err != nil {
+				lg.Error().Msgf("Error incrementing threshold count: %v", err)
+			}
+		}
 	} else {
 		handleRetry(message)
 	}
