@@ -160,7 +160,7 @@ func initDB() (*gorm.DB, error) {
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	// Run automigrations
-	if err := db.AutoMigrate(&models.MessageQueue{}, &models.DlqMessageQueue{}); err != nil {
+	if err := db.AutoMigrate(&models.MessageQueue{}, &models.DlqMessageQueue{}, &models.ServiceThreshold{}); err != nil {
 		return nil, fmt.Errorf("failed to run automigrations: %v", err)
 	}
 
