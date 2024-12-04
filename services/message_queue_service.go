@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,8 +13,6 @@ import (
 
 	"gorm.io/gorm"
 )
-
-var httpClient = &http.Client{}
 
 const (
 	ContentTypeApplicationJSON = "application/json"
@@ -75,6 +74,9 @@ func processCronMessage(message *models.MessageQueue) error {
 }
 
 func sendCallback(message *models.MessageQueue) (*models.CallbackResponseDTO, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
 	requestBody, err := json.Marshal(message.Payload)
 	if err != nil {
 		lg.Error().Msgf("error marshalling Payload: %v", message.Payload)
@@ -84,7 +86,7 @@ func sendCallback(message *models.MessageQueue) (*models.CallbackResponseDTO, er
 	// Log the request body for debugging
 	lg.Info().Msgf("Sending JSON payload to %s: %s", message.CallbackUrl, string(requestBody))
 
-	req, err := http.NewRequest("POST", message.CallbackUrl, bytes.NewBuffer(requestBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", message.CallbackUrl, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +99,15 @@ func sendCallback(message *models.MessageQueue) (*models.CallbackResponseDTO, er
 	req.Header.Set("Content-Type", ContentTypeApplicationJSON)
 	req.Header.Set("internal-api-token", internalApiToken)
 
-	resp, err := httpClient.Do(req)
+	client := &http.Client{
+		Timeout: 30 * time.Second, // Redundant safety net in case context timeout fails
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return nil, fmt.Errorf("callback timeout exceeded: %v", err)
+		}
 		return nil, err
 	}
 	defer resp.Body.Close()
