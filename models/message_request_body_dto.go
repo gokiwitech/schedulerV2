@@ -10,7 +10,7 @@ type MessageRequestBodyDto struct {
 	Status       MessageStatusEnums `json:"status"`
 	NextRetry    int64              `json:"nextRetry" binding:"required"`
 	RetryCount   int                `json:"retryCount"`
-	ServiceName  string             `json:"serviceName"`
+	ServiceName  string             `json:"serviceName,omitempty"`
 	UserId       string             `json:"userId"`
 	MessageType  MessageTypeEnums   `json:"messageType" binding:"required"`
 	TimeDuration int64              `json:"timeDuration"`
