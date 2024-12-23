@@ -13,6 +13,7 @@ const (
 	PENDING    MessageStatusEnums = "PENDING"
 	COMPLETED  MessageStatusEnums = "COMPLETED"
 	INPROGRESS MessageStatusEnums = "IN-PROGRESS"
+	DEAD       MessageStatusEnums = "DEAD"
 )
 
 const (
