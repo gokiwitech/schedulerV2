@@ -131,21 +131,21 @@ func scanAndProcessScheduledMessages() {
 		go func(msg models.MessageQueue) {
 			// Decrement the counter when the go routine completes
 			defer wg.Done()
-			// we might need to add another state the like DEAD state so that we don't unneccsarily query those message them is a waste of CPU
+
 			currentTime := time.Now().Unix()
 			threshold, err := thresholdRepository.FindByServiceName(db, msg.ServiceName, currentTime)
-			if err != nil {
-				if err != gorm.ErrRecordNotFound {
+			if err != nil || (threshold != nil && !thresholdRepository.IsWithinThreshold(threshold)) {
+				msg.Status = models.DEAD
+				if saveErr := messageQueueRepository.Save(db, &msg); saveErr != nil {
+					lg.Error().Msgf("Failed to mark message ID %d as DEAD: %v", msg.ID, saveErr)
+				}
+
+				if err != nil && err != gorm.ErrRecordNotFound {
 					lg.Error().Msgf("Error checking service threshold for message ID %d: %v", msg.ID, err)
+				} else {
+					lg.Info().Msgf("Message ID %d marked as DEAD - outside service threshold", msg.ID)
 				}
-				lg.Error().Msgf("Error getting service threshold for message ID %d: %v", msg.ID, err)
 				return
-			} else {
-				// Skip processing if threshold is exceeded
-				if !thresholdRepository.IsWithinThreshold(threshold) {
-					lg.Info().Msgf("Threshold exceeded for service %s, skipping message ID %d", msg.ServiceName, msg.ID)
-					return
-				}
 			}
 
 			lock := zkclient.NewDistributedLock(config.ZkConn, zkclient.LockBasePath, zkclient.LockName+strconv.Itoa(int(msg.ID)))

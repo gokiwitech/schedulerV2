@@ -11,11 +11,31 @@ func UpsertServiceThreshold(serviceThreshold models.ServiceThreshold) (uint, err
 	if err != nil {
 		return 0, fmt.Errorf("error getting database connection: %v", err)
 	}
-	id, err := thresholdRepository.Upsert(db, &serviceThreshold)
+
+	// Start transaction
+	tx := db.Begin()
+	if tx.Error != nil {
+		return 0, fmt.Errorf("error starting transaction: %v", tx.Error)
+	}
+
+	// Upsert the service threshold
+	id, err := thresholdRepository.Upsert(tx, &serviceThreshold)
 	if err != nil {
+		tx.Rollback()
 		return 0, err
 	}
 
-	lg.Info().Msgf("Service threshold upserted for service %v with ID %v", serviceThreshold.ServiceName, id)
+	// Find and update DEAD messages for this service
+	if err := messageQueueRepository.UpdateDeadMessageStatus(tx, serviceThreshold.ServiceName, models.PENDING); err != nil {
+		tx.Rollback()
+		return 0, fmt.Errorf("error updating dead messages: %v", err)
+	}
+
+	// Commit transaction
+	if err := tx.Commit().Error; err != nil {
+		return 0, fmt.Errorf("error committing transaction: %v", err)
+	}
+
+	lg.Info().Msgf("Service threshold upserted for service %v with ID %v and dead messages reactivated", serviceThreshold.ServiceName, id)
 	return id, nil
 }
