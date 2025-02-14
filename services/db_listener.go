@@ -176,7 +176,7 @@ func scanAndProcessScheduledMessages() {
 			// Proceed with processing the message
 			if err := processScheduledMessage(&msg); err != nil {
 				lg.Error().Msgf("Error processing message ID %d: %v", msg.ID, err)
-				message.Status = models.PENDING
+				msg.Status = models.PENDING
 				messageQueueRepository.Save(db, &msg)
 			}
 		}(message)
@@ -241,7 +241,7 @@ func scanAndProcessCronMessages() {
 			// Time to process the message
 			lg.Info().Msgf("Processing message ID %d", msg.ID)
 			if err := processCronMessage(&msg); err != nil {
-				message.Status = models.PENDING
+				msg.Status = models.PENDING
 				messageQueueRepository.Save(db, &msg)
 				lg.Error().Msgf("Error processing cron message ID %d: %v", msg.ID, err)
 			}
