@@ -157,7 +157,7 @@ func initDB() (*gorm.DB, error) {
 	// Configure connection pool
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
-	sqlDB.SetConnMaxLifetime(time.Hour)
+	sqlDB.SetConnMaxLifetime(10 * time.Minute)
 
 	// Run automigrations
 	if err := db.AutoMigrate(&models.MessageQueue{}, &models.DlqMessageQueue{}, &models.ServiceThreshold{}); err != nil {
