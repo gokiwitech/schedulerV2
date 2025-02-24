@@ -20,11 +20,7 @@ const (
 	StatusFailure              = "FAILURE"
 )
 
-func processScheduledMessage(message *models.MessageQueue) error {
-	db, err := config.GetDBConnection()
-	if err != nil {
-		return fmt.Errorf("error getting database connection: %v", err)
-	}
+func processScheduledMessage(db *gorm.DB, message *models.MessageQueue) error {
 	currentTime := time.Now().Unix()
 
 	// Find and update threshold count
@@ -52,12 +48,7 @@ func processScheduledMessage(message *models.MessageQueue) error {
 	return messageQueueRepository.Save(db, message)
 }
 
-func processCronMessage(message *models.MessageQueue) error {
-	db, err := config.GetDBConnection()
-	if err != nil {
-		return fmt.Errorf("error getting database connection: %v", err)
-	}
-
+func processCronMessage(db *gorm.DB, message *models.MessageQueue) error {
 	callbackResponse, err := sendCallback(message)
 	message.Status = models.PENDING
 	finalRetry := message.TimeDuration
