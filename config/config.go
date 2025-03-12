@@ -201,15 +201,6 @@ func refreshDBConnection() error {
 		return nil
 	}
 
-	sqlDB, err := db.DB()
-	if err != nil {
-		return err
-	}
-
-	if err := sqlDB.Close(); err != nil {
-		return err
-	}
-
 	newDB, err := initDB()
 	if err != nil {
 		return err
